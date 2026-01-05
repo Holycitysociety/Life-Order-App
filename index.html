@@ -3,7 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-    <title>Life Dashboard — Minimal MVP (Time-Aware)</title>
+    <title>Templar Rule Dashboard</title>
+
+    <!-- Optional: Templar-ish fonts (falls back gracefully if blocked) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=EB+Garamond:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
 
     <!-- React 18 -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -13,168 +21,358 @@
 
     <style>
       :root{
-        --bg:#0b0f14;
-        --panel:#101826;
-        --panel2:#0f1520;
-        --text:#e6edf3;
+        --bg:#070a10;
+        --bg2:#0a1020;
+        --panel:#0d1424;
+        --panel2:#0b111d;
+
+        --text:#e8edf5;
         --muted:#9fb0c0;
-        --line:#1f2a3a;
-        --accent:#8ab4f8;
-        --chip:#162234;
+        --line:#1b2a45;
+
+        --gold:#d6b15e;
+        --gold2:#b7923e;
+        --steel:#9fb0c0;
+        --danger:#ff6b6b;
         --good:#35c07a;
         --warn:#f2c94c;
-        --bad:#ff5c5c;
+
+        --chip:#111b30;
+        --shadow: 0 10px 30px rgba(0,0,0,.35);
+
+        --radius: 14px;
+        --radius2: 12px;
       }
+
       *{box-sizing:border-box}
       body{
         margin:0;
-        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-        background: radial-gradient(1200px 800px at 20% 0%, #101a2b 0%, var(--bg) 55%);
         color:var(--text);
+        background:
+          radial-gradient(1100px 700px at 20% 0%, #0d1a33 0%, var(--bg) 58%),
+          radial-gradient(800px 500px at 85% 15%, rgba(214,177,94,.10) 0%, transparent 55%),
+          linear-gradient(180deg, var(--bg2), var(--bg));
+        font-family: "EB Garamond", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
       }
-      .app{max-width:1100px;margin:0 auto;padding:16px 14px 34px;}
-      .topbar{
-        display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;
-        margin-bottom:12px;
+
+      button, input, select, textarea { font: inherit; }
+
+      .app{
+        max-width: 760px;
+        margin: 0 auto;
+        padding-bottom: calc(86px + env(safe-area-inset-bottom)); /* room for bottom nav */
       }
-      .title{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
-      .title h1{font-size:16px;margin:0;letter-spacing:.2px}
-      .subtitle{font-size:12px;color:var(--muted);line-height:1.35}
-      .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
-      button,input,select,textarea{font:inherit}
-      .btn{
-        background:linear-gradient(180deg,#152238,#0f1624);
-        border:1px solid var(--line);
-        color:var(--text);
-        padding:8px 10px;border-radius:10px;cursor:pointer;
+
+      /* Header */
+      .header{
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        backdrop-filter: blur(10px);
+        background: rgba(7,10,16,.72);
+        border-bottom: 1px solid rgba(27,42,69,.55);
       }
-      .btn:hover{border-color:#2a3a52}
-      .btn.primary{background:linear-gradient(180deg,#24406c,#13213a);border-color:#2b4d80}
-      .btn.danger{background:linear-gradient(180deg,#5a1d1d,#2a1111);border-color:#7a2a2a}
-      .btn.ghost{background:transparent}
+      .headerInner{
+        padding: 12px 14px 10px;
+        display:flex;
+        align-items:flex-end;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .brand{
+        display:flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .brandTitle{
+        font-family: "Cinzel", ui-serif, serif;
+        font-weight: 700;
+        letter-spacing: .6px;
+        font-size: 14px;
+        display:flex;
+        align-items:center;
+        gap: 8px;
+      }
+      .brandTitle .sigil{
+        width: 16px; height: 16px;
+        display:inline-flex;
+      }
+      .brandSub{
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.25;
+      }
+      .statusPills{
+        display:flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        justify-content:flex-end;
+      }
       .chip{
-        display:inline-flex;align-items:center;gap:6px;
-        background:var(--chip);border:1px solid var(--line);
-        color:var(--muted);font-size:11px;padding:3px 8px;border-radius:999px;
-        white-space:nowrap;
+        display:inline-flex;
+        align-items:center;
+        gap: 6px;
+        padding: 5px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(27,42,69,.8);
+        background: rgba(17,27,48,.75);
+        color: var(--muted);
+        font-size: 11px;
+        white-space: nowrap;
       }
-      .chip.good{color:#baf3d6;border-color:#1f6a46}
-      .chip.warn{color:#fff1b3;border-color:#6b5a1a}
-      .chip.bad{color:#ffb3b3;border-color:#6b1a1a}
-      .kpis{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-      .grid{
-        display:grid;gap:12px;
-        grid-template-columns:1fr;
+      .chip.gold{
+        border-color: rgba(214,177,94,.45);
+        color: #f3e7c6;
+        background: rgba(214,177,94,.10);
       }
-      @media(min-width:980px){
-        .grid{grid-template-columns: 1.35fr .95fr; align-items:start;}
+      .chip.good{
+        border-color: rgba(53,192,122,.35);
+        color: #c9f3df;
+        background: rgba(53,192,122,.10);
       }
+      .chip.warn{
+        border-color: rgba(242,201,76,.35);
+        color: #fff1b3;
+        background: rgba(242,201,76,.08);
+      }
+      .chip.bad{
+        border-color: rgba(255,107,107,.35);
+        color: #ffd0d0;
+        background: rgba(255,107,107,.09);
+      }
+
+      /* Content */
+      .content{
+        padding: 12px 14px 14px;
+      }
+
       .card{
-        background:linear-gradient(180deg,var(--panel),var(--panel2));
-        border:1px solid var(--line);
-        border-radius:14px;
-        padding:12px;
+        background: linear-gradient(180deg, rgba(13,20,36,.95), rgba(11,17,29,.92));
+        border: 1px solid rgba(27,42,69,.85);
+        border-radius: var(--radius);
+        padding: 12px;
+        box-shadow: var(--shadow);
       }
-      .card h2{
-        margin:0 0 10px;
-        font-size:13px;color:#dbe7f5;
-        display:flex;align-items:center;justify-content:space-between;gap:10px;
+      .card + .card{ margin-top: 12px; }
+
+      .cardTitle{
+        display:flex;
+        align-items:center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 10px;
       }
-      .meta{font-size:12px;color:var(--muted);font-weight:500}
-      .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+      .cardTitle h2{
+        margin:0;
+        font-family:"Cinzel", ui-serif, serif;
+        font-weight: 700;
+        letter-spacing: .5px;
+        font-size: 13px;
+      }
+      .meta{
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      .row{
+        display:flex;
+        gap: 8px;
+        align-items:center;
+        flex-wrap: wrap;
+      }
       .input{
-        width:100%;
-        padding:10px 10px;border-radius:12px;
-        border:1px solid var(--line);background:#0b1220;color:var(--text);
+        width: 100%;
+        padding: 11px 12px;
+        border-radius: var(--radius2);
+        border: 1px solid rgba(27,42,69,.85);
+        background: rgba(7,10,16,.55);
+        color: var(--text);
+        outline: none;
       }
-      .small{font-size:12px;color:var(--muted);line-height:1.35}
-      .three{
-        display:grid;gap:12px;
-        grid-template-columns:1fr;
+      .input:focus{
+        border-color: rgba(214,177,94,.6);
+        box-shadow: 0 0 0 3px rgba(214,177,94,.10);
       }
-      @media(min-width:820px){
-        .three{grid-template-columns:1fr 1fr 1fr}
+
+      .btn{
+        border-radius: 12px;
+        padding: 10px 12px;
+        border: 1px solid rgba(27,42,69,.95);
+        background: rgba(7,10,16,.40);
+        color: var(--text);
+        cursor: pointer;
       }
-      .list{min-height:170px}
+      .btn:active{ transform: translateY(1px); }
+      .btn.primary{
+        border-color: rgba(214,177,94,.55);
+        background: linear-gradient(180deg, rgba(214,177,94,.18), rgba(183,146,62,.08));
+      }
+      .btn.danger{
+        border-color: rgba(255,107,107,.5);
+        background: rgba(255,107,107,.10);
+      }
+      .btn.ghost{ background: transparent; }
+
+      .small{ font-size: 12px; color: var(--muted); line-height: 1.35; }
+      .divider{ height: 1px; background: rgba(27,42,69,.85); margin: 10px 0; }
+
+      /* Tasks */
       .task{
-        border:1px solid var(--line);
-        background:rgba(12,18,32,.70);
-        border-radius:12px;
-        padding:10px;
-        margin-bottom:8px;
+        border: 1px solid rgba(27,42,69,.85);
+        background: rgba(7,10,16,.38);
+        border-radius: 14px;
+        padding: 11px;
+        margin-bottom: 10px;
       }
       .taskTop{
-        display:flex;gap:10px;align-items:flex-start;justify-content:space-between;
+        display:flex;
+        align-items:flex-start;
+        justify-content: space-between;
+        gap: 10px;
       }
-      .taskTitle{margin:0;font-size:13px;line-height:1.25}
-      .taskMeta{margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+      .taskTitle{
+        margin:0;
+        font-size: 14px;
+        line-height: 1.25;
+        letter-spacing: .1px;
+      }
+      .taskMeta{
+        margin-top: 7px;
+        display:flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        align-items:center;
+      }
       .miniBtn{
-        border-radius:10px;padding:6px 8px;
-        border:1px solid var(--line);background:#0b1220;color:var(--text);
-        cursor:pointer;font-size:12px;
+        border-radius: 12px;
+        padding: 9px 10px;
+        border: 1px solid rgba(27,42,69,.95);
+        background: rgba(7,10,16,.40);
+        color: var(--text);
+        cursor: pointer;
+        font-size: 12px;
+        min-height: 40px; /* thumb target */
       }
-      .miniBtn:hover{border-color:#2a3a52}
-      .miniBtn.good{border-color:#1f6a46}
-      .miniBtn.bad{border-color:#6b1a1a}
-      .divider{height:1px;background:var(--line);margin:10px 0}
+      .miniBtn.good{ border-color: rgba(53,192,122,.45); }
+      .miniBtn.gold{ border-color: rgba(214,177,94,.55); }
+      .miniBtn.bad{ border-color: rgba(255,107,107,.45); }
+
       .details{
-        margin-top:8px;
-        border:1px solid var(--line);
-        background:rgba(12,18,32,.45);
-        border-radius:12px;
-        padding:10px;
+        margin-top: 10px;
+        padding: 10px;
+        border-radius: 14px;
+        border: 1px dashed rgba(214,177,94,.35);
+        background: rgba(214,177,94,.06);
       }
       .textarea{
         width:100%;
-        min-height:80px;
-        padding:10px;border-radius:12px;
-        border:1px solid var(--line);background:#0b1220;color:var(--text);
+        min-height: 88px;
+        padding: 10px 10px;
+        border-radius: 12px;
+        border: 1px solid rgba(27,42,69,.85);
+        background: rgba(7,10,16,.55);
+        color: var(--text);
+        outline:none;
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-        font-size:12px;line-height:1.35;
+        font-size: 12px;
+        line-height: 1.35;
       }
-      .toggle{
-        display:inline-flex;align-items:center;gap:8px;
-        padding:8px 10px;border:1px solid var(--line);
-        border-radius:999px;background:rgba(12,18,32,.55);
+
+      /* Timer */
+      .timerWrap{
+        display:flex;
+        align-items:flex-start;
+        justify-content: space-between;
+        gap: 10px;
       }
       .timerBig{
-        font-size:40px;
-        letter-spacing:0.5px;
-        font-weight:700;
-        margin:6px 0 2px;
+        font-family: "Cinzel", ui-serif, serif;
+        font-size: 42px;
+        letter-spacing: 1px;
+        margin: 2px 0;
       }
-      .timerLabel{
-        font-size:12px;color:var(--muted);
-      }
+      .timerLabel{ font-size: 12px; color: var(--muted); }
       .callout{
-        border:1px dashed #2a3a52;
-        border-radius:12px;
-        padding:10px;
-        background:rgba(12,18,32,.35);
+        border-radius: 14px;
+        border: 1px dashed rgba(214,177,94,.35);
+        background: rgba(214,177,94,.06);
+        padding: 10px;
       }
-      .toast{
-        margin-top:10px;
-        border:1px solid var(--line);
-        border-radius:12px;
-        padding:10px;
-        background:rgba(12,18,32,.55);
+
+      /* Bottom Nav */
+      .bottomNav{
+        position: fixed;
+        left: 0; right: 0; bottom: 0;
+        z-index: 30;
+        padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+        backdrop-filter: blur(10px);
+        background: rgba(7,10,16,.80);
+        border-top: 1px solid rgba(27,42,69,.60);
       }
-      .toast strong{color:#dbe7f5}
+      .navRow{
+        max-width: 760px;
+        margin: 0 auto;
+        display:grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 8px;
+      }
+      .navBtn{
+        display:flex;
+        flex-direction: column;
+        align-items:center;
+        justify-content:center;
+        gap: 4px;
+        min-height: 56px;
+        border-radius: 14px;
+        border: 1px solid rgba(27,42,69,.85);
+        background: rgba(7,10,16,.35);
+        color: var(--muted);
+        cursor:pointer;
+      }
+      .navBtn.active{
+        border-color: rgba(214,177,94,.55);
+        background: rgba(214,177,94,.10);
+        color: #f3e7c6;
+      }
+      .navIcon{ width: 18px; height: 18px; display:inline-flex; }
+      .navLabel{ font-size: 11px; font-weight: 600; letter-spacing: .2px; }
+
+      /* Modal */
       .modalOverlay{
-        position:fixed;inset:0;background:rgba(0,0,0,.55);
-        display:flex;align-items:center;justify-content:center;
-        padding:16px;
+        position: fixed;
+        inset:0;
+        background: rgba(0,0,0,.60);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        padding: 14px;
+        z-index: 60;
       }
       .modal{
-        width:min(700px, 100%);
-        max-height: 90vh;
+        width: min(720px, 100%);
+        max-height: 88vh;
         overflow:auto;
-        background:linear-gradient(180deg,var(--panel),var(--panel2));
-        border:1px solid var(--line);
-        border-radius:14px;
-        padding:12px;
+        border-radius: 16px;
+        border: 1px solid rgba(27,42,69,.9);
+        background: linear-gradient(180deg, rgba(13,20,36,.98), rgba(11,17,29,.95));
+        box-shadow: var(--shadow);
+        padding: 12px;
       }
-      .modalHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+      .modalHeader{
+        display:flex;
+        align-items:center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      /* Make text less cramped on narrow devices */
+      @media (max-width: 380px){
+        .navRow{ gap: 6px; }
+        .navBtn{ min-height: 52px; }
+        .timerBig{ font-size: 38px; }
+      }
     </style>
   </head>
 
@@ -182,12 +380,12 @@
     <div id="root"></div>
 
     <script type="text/babel">
-      const { useEffect, useMemo, useRef, useState } = React;
+      const { useEffect, useMemo, useState } = React;
 
-      const LS_KEY = "life_dashboard_min_time_v1";
+      const LS_KEY = "templar_dashboard_mobile_v1";
 
       const MOVES = [
-        "1 minute walk (inside or outside).",
+        "1 minute walk (inside/outside).",
         "10 air squats (slow).",
         "10 incline pushups (hands on counter).",
         "30 sec nasal breathing + drop shoulders.",
@@ -243,14 +441,10 @@
               obedienceTomorrow:"",
             }]
           },
-          projects:[
-            { id: uid(), name:"Life Admin", status:"active" },
-            { id: uid(), name:"Primary Project", status:"active" },
-          ],
           tasks:[
-            { id: uid(), title:"Capture tasks into Inbox", lane:"inbox", done:false, kind:"general", projectId:null, due:null, notes:"", nextTinyStep:"", timerPreset:15, order:1, createdAt:new Date().toISOString() },
-            { id: uid(), title:"Pick Top 3–5 for Today", lane:"today", done:false, kind:"general", projectId:null, due:t, notes:"", nextTinyStep:"Open dashboard → choose 3–5 → start #1.", timerPreset:15, order:2, createdAt:new Date().toISOString() },
-            { id: uid(), title:"Make one Stewardship packet (insurance/taxes/docs/credit)", lane:"later", done:false, kind:"ops", projectId:null, due:null, notes:"Create a checklist and gather links/IDs (no passwords).", nextTinyStep:"Create checklist with 5 bullets.", timerPreset:25, order:3, createdAt:new Date().toISOString() },
+            { id: uid(), title:"Capture tasks into Inbox", lane:"inbox", done:false, kind:"general", due:null, notes:"", nextTinyStep:"", timerPreset:15, order:1, createdAt:new Date().toISOString() },
+            { id: uid(), title:"Pick Top 3–5 for Today", lane:"today", done:false, kind:"general", due:t, notes:"", nextTinyStep:"Open dashboard → choose 3–5 → start #1.", timerPreset:15, order:2, createdAt:new Date().toISOString() },
+            { id: uid(), title:"Make one Stewardship packet (tax/insurance/docs/credit)", lane:"later", done:false, kind:"ops", due:null, notes:"Checklist + links/IDs (no passwords).", nextTinyStep:"Create a 5-bullet checklist.", timerPreset:25, order:3, createdAt:new Date().toISOString() },
           ],
         };
       }
@@ -281,31 +475,34 @@
 
         const meta = (obj.meta && typeof obj.meta === "object") ? obj.meta : base.meta;
         const formation = ensureTodayLedger(obj.formation || base.formation);
-        const projects = Array.isArray(obj.projects) ? obj.projects : base.projects;
         const tasks = Array.isArray(obj.tasks) ? obj.tasks : base.tasks;
 
         // Keep Today ≤ 5 (first by order)
-        const openToday = tasks.filter(t => t && !t.done && t.lane === "today").sort((a,b)=>(a.order||0)-(b.order||0));
-        const overflow = openToday.slice(5).map(t => t.id);
+        const openToday = tasks
+          .filter(t => t && !t.done && t.lane === "today")
+          .sort((a,b)=>(a.order||0)-(b.order||0));
+        const overflow = openToday.slice(5).map(t => String(t.id));
+
         const tasks2 = tasks.map(t => {
           if (!t || typeof t !== "object") return null;
           const lane = ["inbox","today","later"].includes(t.lane) ? t.lane : "inbox";
           const done = !!t.done;
           const id = String(t.id || uid());
+
           const out = {
             id,
             title: String(t.title || "").slice(0,240),
             lane,
             done,
             kind: ["general","ops","project"].includes(t.kind) ? t.kind : "general",
-            projectId: t.projectId ? String(t.projectId) : null,
             due: t.due ? String(t.due).slice(0,10) : null,
             notes: String(t.notes || "").slice(0,2000),
-            nextTinyStep: String(t.nextTinyStep || "").slice(0,200),
-            timerPreset: [2,5,10,15,25,45].includes(Number(t.timerPreset)) ? Number(t.timerPreset) : 15,
+            nextTinyStep: String(t.nextTinyStep || "").slice(0,220),
+            timerPreset: [10,15,25,45].includes(Number(t.timerPreset)) ? Number(t.timerPreset) : 15,
             order: typeof t.order === "number" ? t.order : Date.now(),
             createdAt: t.createdAt ? String(t.createdAt) : new Date().toISOString(),
           };
+
           if (overflow.includes(id) && out.lane === "today" && !out.done) out.lane = "later";
           return out;
         }).filter(Boolean);
@@ -316,11 +513,6 @@
             lastOpenedDate: meta.lastOpenedDate ? String(meta.lastOpenedDate).slice(0,10) : localISODate(),
           },
           formation,
-          projects: projects.map(p => ({
-            id: String(p.id || uid()),
-            name: String(p.name || "Untitled Project").slice(0,120),
-            status: ["active","paused","done"].includes(p.status) ? p.status : "active",
-          })),
           tasks: tasks2,
         };
       }
@@ -343,32 +535,88 @@
         return e || (f.dailyLedger || [])[f.dailyLedger.length - 1];
       }
 
+      function deepMerge(a, b){
+        const out = { ...a };
+        for (const k of Object.keys(b || {})) {
+          const v = b[k];
+          if (v && typeof v === "object" && !Array.isArray(v)) {
+            out[k] = deepMerge(a?.[k] || {}, v);
+          } else {
+            out[k] = v;
+          }
+        }
+        return out;
+      }
+
+      // Icons (inline SVG)
+      const Icon = {
+        cross: () => (
+          <svg viewBox="0 0 24 24" fill="none" className="navIcon" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 3h4v6h6v4h-6v8h-4v-8H4V9h6V3z" fill="currentColor" opacity=".95"/>
+          </svg>
+        ),
+        today: () => (
+          <svg viewBox="0 0 24 24" fill="none" className="navIcon" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7 3v2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2V3h-2v2H9V3H7zm12 6H5v10h14V9z" fill="currentColor"/>
+          </svg>
+        ),
+        inbox: () => (
+          <svg viewBox="0 0 24 24" fill="none" className="navIcon" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 4h16v10h-5l-3 3-3-3H4V4zm0 12h4l4 4 4-4h4v4H4v-4z" fill="currentColor"/>
+          </svg>
+        ),
+        later: () => (
+          <svg viewBox="0 0 24 24" fill="none" className="navIcon" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2zm1 5h-2v6l5 3 1-1.732-4-2.268V7z" fill="currentColor"/>
+          </svg>
+        ),
+        focus: () => (
+          <svg viewBox="0 0 24 24" fill="none" className="navIcon" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7 3H3v4h2V5h2V3zm14 0h-4v2h2v2h2V3zM5 17H3v4h4v-2H5v-2zm16 0h-2v2h-2v2h4v-4zM12 7a5 5 0 1 0 .001 10.001A5 5 0 0 0 12 7z" fill="currentColor"/>
+          </svg>
+        ),
+        rule: () => (
+          <svg viewBox="0 0 24 24" fill="none" className="navIcon" xmlns="http://www.w3.org/2000/svg">
+            <path d="M6 2h12a2 2 0 0 1 2 2v16l-3-2-3 2-3-2-3 2-3-2-3 2V4a2 2 0 0 1 2-2zm2 6h8v2H8V8zm0 4h8v2H8v-2z" fill="currentColor"/>
+          </svg>
+        ),
+        json: () => (
+          <svg viewBox="0 0 24 24" fill="none" className="navIcon" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 4H6c-1.1 0-2 .9-2 2v4h2V6h2V4zm10 0h-2v2h2v4h2V6c0-1.1-.9-2-2-2zM6 18H4v4c0 1.1.9 2 2 2h2v-2H6v-4zm14 0h-2v4h-2v2h2c1.1 0 2-.9 2-2v-4zM9 9h6v2H9V9zm0 4h6v2H9v-2z" fill="currentColor"/>
+          </svg>
+        ),
+      };
+
       function App(){
         const [state, setState] = useState(() => loadState());
         const [now, setNow] = useState(() => new Date());
-        const [showJSON, setShowJSON] = useState(false);
-        const [jsonText, setJsonText] = useState("");
-        const [jsonMsg, setJsonMsg] = useState("");
+        const [tab, setTab] = useState("today"); // today | inbox | later | focus | rule | json
+        const [toast, setToast] = useState("");
 
+        // Quick add
         const [newTitle, setNewTitle] = useState("");
         const [newLane, setNewLane] = useState("inbox");
         const [newKind, setNewKind] = useState("general");
         const [newPreset, setNewPreset] = useState(15);
 
+        // Task details toggle
         const [expandedTaskId, setExpandedTaskId] = useState(null);
 
-        const [toast, setToast] = useState("");
+        // JSON
+        const [showJSON, setShowJSON] = useState(false);
+        const [jsonText, setJsonText] = useState("");
+        const [jsonMsg, setJsonMsg] = useState("");
 
-        // Timer state
+        // Timer
         const [timer, setTimer] = useState({
-          mode: "idle",            // "idle" | "focus" | "break"
+          mode: "idle",        // idle | focus | break
           running: false,
           secondsLeft: 0,
           taskId: null,
           movePrompt: "",
         });
 
-        // tick clock
+        // clock tick
         useEffect(() => {
           const id = setInterval(() => setNow(new Date()), 1000);
           return () => clearInterval(id);
@@ -378,21 +626,16 @@
         useEffect(() => {
           const t = localISODate();
           if (state.meta.lastOpenedDate !== t) {
-            // Move stale Today to Later, reset ledger lines for today (new entry), stop timer
             const next = {
               ...state,
               meta: { ...state.meta, lastOpenedDate: t },
-              tasks: state.tasks.map(task => {
-                if (task.lane === "today" && !task.done) return { ...task, lane: "later" };
-                return task;
-              }),
+              tasks: state.tasks.map(task => (task.lane === "today" && !task.done) ? { ...task, lane: "later" } : task),
               formation: ensureTodayLedger(state.formation),
             };
             setState(normalizeState(next));
             setTimer({ mode:"idle", running:false, secondsLeft:0, taskId:null, movePrompt:"" });
             setToast("New day: moved unfinished Today items to Later.");
           } else {
-            // ensure ledger exists (e.g. after import)
             setState(prev => normalizeState(prev));
           }
           // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -408,7 +651,6 @@
               if (!prev.running) return prev;
               const next = { ...prev, secondsLeft: Math.max(0, prev.secondsLeft - 1) };
               if (next.secondsLeft <= 0) {
-                // end
                 if (prev.mode === "focus") {
                   const prompt = randMove();
                   setToast("Focus complete. Take a movement break.");
@@ -425,31 +667,6 @@
           return () => clearInterval(id);
         }, [timer.running]);
 
-        const phase = phaseOfDay(now);
-
-        const tasksOpen = useMemo(() => state.tasks.filter(t => !t.done), [state.tasks]);
-
-        const tasksByLane = useMemo(() => {
-          const lanes = { inbox: [], today: [], later: [] };
-          const sorted = [...tasksOpen].sort((a,b)=>(a.order||0)-(b.order||0));
-          for (const t of sorted) lanes[t.lane].push(t);
-          return lanes;
-        }, [tasksOpen]);
-
-        const kpis = useMemo(() => {
-          const open = tasksOpen.length;
-          const todayCount = tasksByLane.today.length;
-          const done = state.tasks.filter(t => t.done).length;
-          return { open, todayCount, done };
-        }, [tasksOpen, tasksByLane.today.length, state.tasks]);
-
-        const todayLedger = useMemo(() => getTodayLedger(state.formation), [state.formation]);
-
-        const currentTask = useMemo(() => {
-          if (!timer.taskId) return null;
-          return state.tasks.find(t => t.id === timer.taskId) || null;
-        }, [timer.taskId, state.tasks]);
-
         function commit(next){
           setState(normalizeState(next));
         }
@@ -463,7 +680,6 @@
             lane: newLane,
             done: false,
             kind: newKind,
-            projectId: null,
             due: null,
             notes: "",
             nextTinyStep: "",
@@ -471,56 +687,26 @@
             order: Date.now(),
             createdAt: new Date().toISOString(),
           };
-          const next = { ...state, tasks: [...state.tasks, task] };
-          commit(next);
+          commit({ ...state, tasks: [...state.tasks, task] });
           setNewTitle("");
+          setToast("Captured.");
         }
 
         function toggleDone(taskId){
-          const next = {
-            ...state,
-            tasks: state.tasks.map(t => t.id === taskId ? { ...t, done: !t.done } : t)
-          };
-          commit(next);
+          commit({ ...state, tasks: state.tasks.map(t => t.id === taskId ? { ...t, done: !t.done } : t) });
         }
-
         function moveTask(taskId, lane){
-          const next = {
-            ...state,
-            tasks: state.tasks.map(t => t.id === taskId ? { ...t, lane } : t)
-          };
-          commit(next);
+          commit({ ...state, tasks: state.tasks.map(t => t.id === taskId ? { ...t, lane } : t) });
         }
-
         function editTask(taskId, patch){
-          const next = {
-            ...state,
-            tasks: state.tasks.map(t => t.id === taskId ? { ...t, ...patch } : t)
-          };
-          commit(next);
+          commit({ ...state, tasks: state.tasks.map(t => t.id === taskId ? { ...t, ...patch } : t) });
         }
 
         function updateLedger(patch){
           const t = localISODate();
           const f = ensureTodayLedger(state.formation);
-          const dl = (f.dailyLedger || []).map(e => {
-            if (e.date !== t) return e;
-            return deepMerge(e, patch);
-          });
+          const dl = (f.dailyLedger || []).map(e => (e.date === t ? deepMerge(e, patch) : e));
           commit({ ...state, formation: { ...f, dailyLedger: dl } });
-        }
-
-        function deepMerge(a, b){
-          const out = { ...a };
-          for (const k of Object.keys(b || {})) {
-            const v = b[k];
-            if (v && typeof v === "object" && !Array.isArray(v)) {
-              out[k] = deepMerge(a?.[k] || {}, v);
-            } else {
-              out[k] = v;
-            }
-          }
-          return out;
         }
 
         function resetAll(){
@@ -530,7 +716,7 @@
           setToast("Reset.");
         }
 
-        // JSON export/import
+        // JSON
         function exportJSON(){
           const text = JSON.stringify(state, null, 2);
           setJsonText(text);
@@ -550,65 +736,29 @@
           setToast("Imported state.");
         }
 
-        // Timer controls
-        function startFocusForTask(task){
-          const mins = Number(task.timerPreset) || 15;
-          const step = (task.nextTinyStep || "").trim();
-          setTimer({
-            mode: "focus",
-            running: true,
-            secondsLeft: mins * 60,
-            taskId: task.id,
-            movePrompt: "",
-          });
-          setToast(step ? `Start: ${step}` : "Start focus.");
-        }
+        // Timer helpers
+        const tasksOpen = useMemo(() => state.tasks.filter(t => !t.done), [state.tasks]);
+        const tasksByLane = useMemo(() => {
+          const lanes = { inbox: [], today: [], later: [] };
+          const sorted = [...tasksOpen].sort((a,b)=>(a.order||0)-(b.order||0));
+          for (const t of sorted) lanes[t.lane].push(t);
+          return lanes;
+        }, [tasksOpen]);
 
-        function startTopToday(){
-          const top = tasksByLane.today[0];
-          if (!top) { setToast("No Today tasks. Move one from Later."); return; }
-          startFocusForTask(top);
-        }
+        const phase = phaseOfDay(now);
+        const phaseChip = useMemo(() => {
+          if (phase === "morning") return { cls:"good", label:"Morning" };
+          if (phase === "midday") return { cls:"warn", label:"Midday" };
+          if (phase === "evening") return { cls:"", label:"Evening" };
+          return { cls:"bad", label:"Night" };
+        }, [phase]);
 
-        function toggleTimerRun(){
-          setTimer(prev => {
-            if (prev.mode === "idle") return prev;
-            return { ...prev, running: !prev.running };
-          });
-        }
+        const todayLedger = useMemo(() => getTodayLedger(state.formation), [state.formation]);
 
-        function resetTimer(){
-          setTimer({ mode:"idle", running:false, secondsLeft:0, taskId:null, movePrompt:"" });
-          setToast("Timer reset.");
-        }
-
-        function setFocusPreset(mins){
-          // Set focus length for current task (or next)
-          setTimer(prev => {
-            if (prev.mode !== "focus" || !prev.taskId) return prev;
-            return { ...prev, secondsLeft: mins*60, running: false };
-          });
-        }
-
-        function setBreakPreset(mins){
-          setTimer(prev => {
-            if (prev.mode !== "break") return prev;
-            return { ...prev, secondsLeft: mins*60, running: false };
-          });
-        }
-
-        function startBreakNow(){
-          setTimer(prev => {
-            const prompt = prev.movePrompt || randMove();
-            return { mode:"break", running:true, secondsLeft: prev.secondsLeft > 0 ? prev.secondsLeft : 2*60, taskId: prev.taskId, movePrompt: prompt };
-          });
-        }
-
-        function completeCurrentTask(){
-          if (!currentTask) return;
-          toggleDone(currentTask.id);
-          setToast("Marked done ✅");
-        }
+        const currentTask = useMemo(() => {
+          if (!timer.taskId) return null;
+          return state.tasks.find(t => t.id === timer.taskId) || null;
+        }, [timer.taskId, state.tasks]);
 
         function fmtMMSS(sec){
           const m = Math.floor(sec / 60);
@@ -616,88 +766,147 @@
           return `${m}:${pad2(s)}`;
         }
 
-        const phaseChip = useMemo(() => {
-          const map = {
-            morning: { kind: "good", label: "Morning" },
-            midday: { kind: "warn", label: "Midday" },
-            evening: { kind: "", label: "Evening" },
-            night: { kind: "bad", label: "Night" },
-          };
-          return map[phase] || { kind:"", label: phase };
-        }, [phase]);
+        function startFocusForTask(task){
+          const mins = Number(task.timerPreset) || 15;
+          const step = (task.nextTinyStep || "").trim();
+          setTimer({ mode:"focus", running:true, secondsLeft: mins*60, taskId: task.id, movePrompt:"" });
+          setTab("focus");
+          setToast(step ? `Start: ${step}` : "Start focus.");
+        }
+        function startTopToday(){
+          const top = tasksByLane.today[0];
+          if (!top) { setToast("No Today tasks. Move one from Later."); return; }
+          startFocusForTask(top);
+        }
+        function toggleTimerRun(){
+          setTimer(prev => prev.mode === "idle" ? prev : { ...prev, running: !prev.running });
+        }
+        function resetTimer(){
+          setTimer({ mode:"idle", running:false, secondsLeft:0, taskId:null, movePrompt:"" });
+          setToast("Timer reset.");
+        }
+        function setFocusPreset(mins){
+          setTimer(prev => (prev.mode !== "focus" ? prev : { ...prev, secondsLeft: mins*60, running:false }));
+        }
+        function setBreakPreset(mins){
+          setTimer(prev => (prev.mode !== "break" ? prev : { ...prev, secondsLeft: mins*60, running:false }));
+        }
+        function startBreakNow(){
+          setTimer(prev => {
+            const prompt = prev.movePrompt || randMove();
+            return { mode:"break", running:true, secondsLeft: prev.secondsLeft > 0 ? prev.secondsLeft : 2*60, taskId: prev.taskId, movePrompt: prompt };
+          });
+        }
+        function completeCurrentTask(){
+          if (!currentTask) return;
+          toggleDone(currentTask.id);
+          setToast("Marked done ✅");
+        }
+
+        // Render tab content
+        const tabTitle = (t) => ({
+          today: "Today",
+          inbox: "Inbox",
+          later: "Later",
+          focus: "Focus",
+          rule: "Rule",
+          json: "JSON",
+        }[t] || t);
 
         return (
-          <div className="app">
-            <div className="topbar">
-              <div className="title">
-                <h1>Life Dashboard</h1>
-                <div className="subtitle">
-                  <span className={`chip ${phaseChip.kind}`}>{phaseChip.label}</span>{" "}
-                  <span className="chip">{fmtTime(now)}</span>{" "}
-                  <span className="chip">{localISODate(now)}</span>
-                  <div className="small" style={{marginTop:6}}>
-                    Minimal MVP: <strong>Today ≤ 5</strong> • Inbox capture • Later holds Ops/Projects.
+          <>
+            <div className="app">
+              {/* Header */}
+              <div className="header">
+                <div className="headerInner">
+                  <div className="brand">
+                    <div className="brandTitle">
+                      <span className="sigil" aria-hidden="true"><Icon.cross /></span>
+                      Templar Rule Dashboard
+                    </div>
+                    <div className="brandSub">
+                      {tabTitle(tab)} • Today ≤ 5 • {fmtTime(now)} • {localISODate(now)}
+                    </div>
+                  </div>
+
+                  <div className="statusPills">
+                    <span className={`chip ${phaseChip.cls}`}>{phaseChip.label}</span>
+                    <span className="chip gold">Open: {tasksOpen.length}</span>
+                    <span className={`chip ${tasksByLane.today.length > 5 ? "bad" : "gold"}`}>Today: {tasksByLane.today.length}/5</span>
                   </div>
                 </div>
               </div>
 
-              <div className="controls">
-                <div className="kpis">
-                  <span className="chip">Open: {kpis.open}</span>
-                  <span className={`chip ${kpis.todayCount > 5 ? "bad" : ""}`}>Today: {kpis.todayCount}/5</span>
-                  <span className="chip">Done: {kpis.done}</span>
-                </div>
-                <button className="btn primary" onClick={startTopToday}>Start Top Today</button>
-                <button className="btn" onClick={exportJSON}>Export JSON</button>
-                <button className="btn" onClick={() => setShowJSON(v=>!v)}>Import/Inspect</button>
-                <button className="btn danger" onClick={resetAll}>Reset</button>
-              </div>
-            </div>
+              <div className="content">
+                {/* Quick add (mobile-friendly) */}
+                {(tab === "today" || tab === "inbox" || tab === "later") && (
+                  <div className="card">
+                    <div className="cardTitle">
+                      <h2>Capture</h2>
+                      <div className="meta">Fast, then decide later</div>
+                    </div>
 
-            <div className="grid">
-              {/* LEFT: lists */}
-              <div className="card">
-                <h2>
-                  <span>Work Mat</span>
-                  <span className="meta">Do the next tiny step. Timer + movement break. Repeat.</span>
-                </h2>
+                    <div className="row">
+                      <input
+                        className="input"
+                        placeholder="Quick add… (Enter to save)"
+                        value={newTitle}
+                        onChange={(e)=>setNewTitle(e.target.value)}
+                        onKeyDown={(e)=>{ if(e.key==="Enter") addTask(); }}
+                      />
+                    </div>
 
-                <div className="row" style={{marginBottom:10}}>
-                  <input
-                    className="input"
-                    placeholder="Quick add… (Enter to save)"
-                    value={newTitle}
-                    onChange={(e)=>setNewTitle(e.target.value)}
-                    onKeyDown={(e)=>{ if(e.key==="Enter") addTask(); }}
-                  />
-                </div>
+                    <div className="row" style={{marginTop:10}}>
+                      <select className="input" value={newLane} onChange={(e)=>setNewLane(e.target.value)} style={{flex:1, minWidth: 120}}>
+                        <option value="inbox">Inbox</option>
+                        <option value="today">Today</option>
+                        <option value="later">Later</option>
+                      </select>
 
-                <div className="row" style={{marginBottom:10}}>
-                  <select className="input" value={newLane} onChange={(e)=>setNewLane(e.target.value)} style={{maxWidth:170}}>
-                    <option value="inbox">Inbox</option>
-                    <option value="today">Today</option>
-                    <option value="later">Later</option>
-                  </select>
+                      <select className="input" value={newKind} onChange={(e)=>setNewKind(e.target.value)} style={{flex:1, minWidth: 140}}>
+                        <option value="general">General</option>
+                        <option value="ops">Ops (Stewardship)</option>
+                        <option value="project">Project (Mission)</option>
+                      </select>
 
-                  <select className="input" value={newKind} onChange={(e)=>setNewKind(e.target.value)} style={{maxWidth:170}}>
-                    <option value="general">General</option>
-                    <option value="ops">Ops (Stewardship)</option>
-                    <option value="project">Project (Mission)</option>
-                  </select>
+                      <select className="input" value={newPreset} onChange={(e)=>setNewPreset(Number(e.target.value))} style={{flex:1, minWidth: 110}}>
+                        <option value={15}>15m</option>
+                        <option value={25}>25m</option>
+                        <option value={45}>45m</option>
+                      </select>
 
-                  <select className="input" value={newPreset} onChange={(e)=>setNewPreset(Number(e.target.value))} style={{maxWidth:140}}>
-                    <option value={15}>15m</option>
-                    <option value={25}>25m</option>
-                    <option value={45}>45m</option>
-                  </select>
+                      <button className="btn primary" onClick={addTask} style={{flex:1, minWidth: 110}}>
+                        Add
+                      </button>
+                    </div>
 
-                  <button className="btn primary" onClick={addTask}>Add</button>
-                </div>
+                    <div className="divider"></div>
 
-                <div className="three">
+                    <div className="row" style={{justifyContent:"space-between"}}>
+                      <div className="small">
+                        Tip: write a <strong>tiny step</strong>, then press <strong>Start</strong>.
+                      </div>
+                      <button className="btn primary" onClick={startTopToday}>
+                        Start Top Today
+                      </button>
+                    </div>
+
+                    {toast && (
+                      <div className="callout" style={{marginTop:10}}>
+                        <div className="small"><strong>Note:</strong> {toast}</div>
+                        <div style={{marginTop:10}}>
+                          <button className="btn ghost" onClick={()=>setToast("")}>Dismiss</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Lanes */}
+                {tab === "today" && (
                   <Lane
                     title="Today (≤ 5)"
-                    hint="Only what you will actually do."
+                    subtitle="Only what you will actually do."
                     tasks={tasksByLane.today}
                     lane="today"
                     expandedTaskId={expandedTaskId}
@@ -707,9 +916,11 @@
                     onEdit={editTask}
                     onStart={startFocusForTask}
                   />
+                )}
+                {tab === "inbox" && (
                   <Lane
                     title="Inbox"
-                    hint="Capture only. No deciding here."
+                    subtitle="Capture only. No deciding here."
                     tasks={tasksByLane.inbox}
                     lane="inbox"
                     expandedTaskId={expandedTaskId}
@@ -719,9 +930,11 @@
                     onEdit={editTask}
                     onStart={startFocusForTask}
                   />
+                )}
+                {tab === "later" && (
                   <Lane
                     title="Later"
-                    hint="Everything else (Ops/Projects live here)."
+                    subtitle="Everything else (Ops + Projects)."
                     tasks={tasksByLane.later}
                     lane="later"
                     expandedTaskId={expandedTaskId}
@@ -731,155 +944,184 @@
                     onEdit={editTask}
                     onStart={startFocusForTask}
                   />
-                </div>
+                )}
 
-                {toast && (
-                  <div className="toast">
-                    <strong>Note:</strong> <span className="small">{toast}</span>
-                    <div style={{marginTop:8}}>
-                      <button className="miniBtn" onClick={()=>setToast("")}>Dismiss</button>
+                {/* Focus */}
+                {tab === "focus" && (
+                  <div className="card">
+                    <div className="cardTitle">
+                      <h2>Focus</h2>
+                      <div className="meta">Sprints + movement breaks</div>
+                    </div>
+
+                    <div className="callout">
+                      <div className="timerWrap">
+                        <div>
+                          <div className="timerLabel">
+                            {timer.mode === "idle" ? "Idle" : timer.mode === "focus" ? "Focus" : "Break"}
+                            {currentTask ? ` • ${currentTask.title}` : ""}
+                          </div>
+                          <div className="timerBig">
+                            {timer.mode === "idle" ? "—:—" : fmtMMSS(timer.secondsLeft)}
+                          </div>
+                          <div className="small">
+                            {timer.mode === "focus" && currentTask?.nextTinyStep ? (
+                              <>Next tiny step: <strong>{currentTask.nextTinyStep}</strong></>
+                            ) : timer.mode === "break" && timer.movePrompt ? (
+                              <>Move: <strong>{timer.movePrompt}</strong></>
+                            ) : (
+                              <>Start the top Today task, then obey the timer.</>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="row" style={{justifyContent:"flex-end"}}>
+                          <button className="btn primary" onClick={toggleTimerRun} disabled={timer.mode==="idle"}>
+                            {timer.running ? "Pause" : "Start"}
+                          </button>
+                          <button className="btn" onClick={resetTimer}>Reset</button>
+                        </div>
+                      </div>
+
+                      <div className="divider"></div>
+
+                      <div className="row" style={{justifyContent:"space-between"}}>
+                        <div className="small">
+                          Focus:
+                          <span style={{marginLeft:8}} />
+                          <button className="miniBtn gold" onClick={()=>setFocusPreset(15)} disabled={timer.mode!=="focus"}>15m</button>{" "}
+                          <button className="miniBtn gold" onClick={()=>setFocusPreset(25)} disabled={timer.mode!=="focus"}>25m</button>{" "}
+                          <button className="miniBtn gold" onClick={()=>setFocusPreset(45)} disabled={timer.mode!=="focus"}>45m</button>
+                        </div>
+
+                        <div className="small">
+                          Break:
+                          <span style={{marginLeft:8}} />
+                          <button className="miniBtn" onClick={()=>setBreakPreset(2)} disabled={timer.mode!=="break"}>2m</button>{" "}
+                          <button className="miniBtn" onClick={()=>setBreakPreset(5)} disabled={timer.mode!=="break"}>5m</button>{" "}
+                          <button className="miniBtn gold" onClick={startBreakNow} disabled={timer.mode!=="break"}>Start break</button>
+                        </div>
+                      </div>
+
+                      <div style={{marginTop:10}} className="row">
+                        <button className="miniBtn good" onClick={completeCurrentTask} disabled={!currentTask}>
+                          Mark current task done ✅
+                        </button>
+                        <button
+                          className="miniBtn"
+                          onClick={()=>{
+                            const nextPrompt = randMove();
+                            setTimer(prev => prev.mode==="break" ? { ...prev, movePrompt: nextPrompt } : prev);
+                          }}
+                          disabled={timer.mode!=="break"}
+                        >
+                          New move
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
-              </div>
 
-              {/* RIGHT: time-aware + formation + JSON */}
-              <div className="card">
-                <h2>
-                  <span>Time-aware Focus</span>
-                  <span className="meta">Short sprints + movement breaks (ADD-friendly).</span>
-                </h2>
-
-                <div className="callout">
-                  <div className="row" style={{justifyContent:"space-between"}}>
-                    <div>
-                      <div className="timerLabel">
-                        {timer.mode === "idle" ? "Idle" : timer.mode === "focus" ? "Focus" : "Break"}
-                        {currentTask ? ` • ${currentTask.title}` : ""}
-                      </div>
-                      <div className="timerBig">
-                        {timer.mode === "idle" ? "—:—" : fmtMMSS(timer.secondsLeft)}
-                      </div>
-                      <div className="small">
-                        {timer.mode === "focus" && currentTask?.nextTinyStep ? (
-                          <>Next tiny step: <strong>{currentTask.nextTinyStep}</strong></>
-                        ) : timer.mode === "break" && timer.movePrompt ? (
-                          <>Move: <strong>{timer.movePrompt}</strong></>
-                        ) : (
-                          <>Tip: start the top Today task, then obey the timer.</>
-                        )}
-                      </div>
+                {/* Rule */}
+                {tab === "rule" && (
+                  <div className="card">
+                    <div className="cardTitle">
+                      <h2>Rule Ledger</h2>
+                      <div className="meta">Ora • Labora • Pugna + Mercy</div>
                     </div>
 
-                    <div className="row" style={{justifyContent:"flex-end"}}>
-                      <button className="btn primary" onClick={toggleTimerRun} disabled={timer.mode==="idle"}>
-                        {timer.running ? "Pause" : "Start"}
-                      </button>
-                      <button className="btn" onClick={resetTimer}>Reset</button>
-                    </div>
-                  </div>
-
-                  <div className="divider"></div>
-
-                  <div className="row" style={{justifyContent:"space-between"}}>
-                    <div className="small">
-                      Focus presets:
-                      <span style={{marginLeft:8}} />
-                      <button className="miniBtn" onClick={()=>setFocusPreset(15)} disabled={timer.mode!=="focus"}>15m</button>{" "}
-                      <button className="miniBtn" onClick={()=>setFocusPreset(25)} disabled={timer.mode!=="focus"}>25m</button>{" "}
-                      <button className="miniBtn" onClick={()=>setFocusPreset(45)} disabled={timer.mode!=="focus"}>45m</button>
-                    </div>
-
-                    <div className="small">
-                      Break presets:
-                      <span style={{marginLeft:8}} />
-                      <button className="miniBtn" onClick={()=>setBreakPreset(2)} disabled={timer.mode!=="break"}>2m</button>{" "}
-                      <button className="miniBtn" onClick={()=>setBreakPreset(5)} disabled={timer.mode!=="break"}>5m</button>{" "}
-                      <button className="miniBtn good" onClick={startBreakNow} disabled={timer.mode!=="break"}>Start break</button>
-                    </div>
-                  </div>
-
-                  <div style={{marginTop:10}} className="row">
-                    <button className="miniBtn good" onClick={completeCurrentTask} disabled={!currentTask}>
-                      Mark current task done ✅
-                    </button>
-                    <button
-                      className="miniBtn"
-                      onClick={()=>{
-                        const nextPrompt = randMove();
-                        setTimer(prev => prev.mode==="break" ? { ...prev, movePrompt: nextPrompt } : prev);
-                      }}
-                      disabled={timer.mode!=="break"}
-                    >
-                      New move
-                    </button>
-                  </div>
-                </div>
-
-                <div className="divider"></div>
-
-                <h2>
-                  <span>Rule Ledger (private)</span>
-                  <span className="meta">Minimal fidelity: Ora • Labora • Pugna + Mercy.</span>
-                </h2>
-
-                <Ledger
-                  phase={phase}
-                  ledger={todayLedger}
-                  onPatch={updateLedger}
-                />
-
-                <div className="divider"></div>
-
-                <h2>
-                  <span>JSON Round-trip</span>
-                  <span className="meta">Export → paste to ChatGPT → import back.</span>
-                </h2>
-
-                <div className="small" style={{marginBottom:8}}>
-                  Use this prompt with your export: <br/>
-                  <span className="chip">“Set Today ≤ 5, write tiny steps for each, assign timers, add a 2-line invocation + 3-line examen, return updated JSON only.”</span>
-                </div>
-
-                {showJSON ? (
-                  <>
-                    <textarea
-                      className="textarea"
-                      value={jsonText}
-                      onChange={(e)=>setJsonText(e.target.value)}
-                      placeholder="Paste JSON here to import…"
-                      style={{minHeight:180}}
+                    <Ledger
+                      phase={phase}
+                      ledger={todayLedger}
+                      onPatch={updateLedger}
                     />
-                    <div className="row" style={{justifyContent:"space-between", marginTop:8}}>
-                      <div className="small">{jsonMsg}</div>
-                      <div className="row">
-                        <button className="btn" onClick={()=>setShowJSON(false)}>Close</button>
-                        <button className="btn primary" onClick={importJSON}>Import JSON</button>
+                  </div>
+                )}
+
+                {/* JSON */}
+                {tab === "json" && (
+                  <div className="card">
+                    <div className="cardTitle">
+                      <h2>JSON Round-trip</h2>
+                      <div className="meta">Export → chat → import</div>
+                    </div>
+
+                    <div className="row">
+                      <button className="btn primary" onClick={exportJSON}>Export JSON</button>
+                      <button className="btn" onClick={()=>setShowJSON(v=>!v)}>{showJSON ? "Hide" : "Import JSON"}</button>
+                      <button className="btn danger" onClick={resetAll}>Reset</button>
+                    </div>
+
+                    <div className="divider"></div>
+
+                    <div className="small" style={{marginBottom:10}}>
+                      Prompt to use with export:
+                      <div className="callout" style={{marginTop:8}}>
+                        <div className="small">
+                          “Set Today ≤ 5, write a tiny step for each, assign timers, and keep at least 1 Ops + 1 Project item if possible. Return UPDATED JSON only.”
+                        </div>
                       </div>
                     </div>
-                  </>
-                ) : (
-                  <div className="small">
-                    Click <strong>Export JSON</strong> on the left toolbar, paste into ChatGPT, then paste the returned JSON here.
+
+                    {showJSON ? (
+                      <>
+                        <textarea
+                          className="textarea"
+                          value={jsonText}
+                          onChange={(e)=>setJsonText(e.target.value)}
+                          placeholder="Paste JSON here to import…"
+                          style={{minHeight:200}}
+                        />
+                        <div className="row" style={{justifyContent:"space-between", marginTop:10}}>
+                          <div className="small">{jsonMsg}</div>
+                          <div className="row">
+                            <button className="btn" onClick={()=>setShowJSON(false)}>Close</button>
+                            <button className="btn primary" onClick={importJSON}>Import</button>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="small">
+                        Tip: you can keep this private and still get full “spiritual father + ADD” prioritization by round-tripping JSON.
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Break modal prompt when focus ends */}
+            {/* Bottom nav */}
+            <div className="bottomNav">
+              <div className="navRow">
+                <NavButton label="Today" icon={<Icon.today />} active={tab==="today"} onClick={()=>setTab("today")} />
+                <NavButton label="Inbox" icon={<Icon.inbox />} active={tab==="inbox"} onClick={()=>setTab("inbox")} />
+                <NavButton label="Later" icon={<Icon.later />} active={tab==="later"} onClick={()=>setTab("later")} />
+                <NavButton label="Focus" icon={<Icon.focus />} active={tab==="focus"} onClick={()=>setTab("focus")} />
+                <NavButton label="Rule" icon={<Icon.rule />} active={tab==="rule"} onClick={()=>setTab("rule")} />
+                <NavButton label="JSON" icon={<Icon.json />} active={tab==="json"} onClick={()=>setTab("json")} />
+              </div>
+            </div>
+
+            {/* Break prompt modal */}
             {timer.mode === "break" && !timer.running && timer.secondsLeft > 0 && (
               <div className="modalOverlay" role="dialog" aria-modal="true">
                 <div className="modal">
                   <div className="modalHeader">
                     <div>
-                      <strong>Movement break</strong>
+                      <div className="brandTitle" style={{fontSize:13}}>
+                        <span className="sigil" aria-hidden="true"><Icon.cross /></span>
+                        Movement break
+                      </div>
                       <div className="small">Do this now, then start the break timer.</div>
                     </div>
                     <button className="btn ghost" onClick={()=>setTimer({mode:"idle",running:false,secondsLeft:0,taskId:null,movePrompt:""})}>✕</button>
                   </div>
+
                   <div className="callout">
                     <div className="small">Move:</div>
-                    <div style={{marginTop:6, fontSize:14}}><strong>{timer.movePrompt || randMove()}</strong></div>
+                    <div style={{marginTop:8, fontSize:16}}>
+                      <strong>{timer.movePrompt || randMove()}</strong>
+                    </div>
                     <div className="divider"></div>
                     <div className="row">
                       <button className="btn primary" onClick={startBreakNow}>Start break timer</button>
@@ -890,18 +1132,27 @@
                 </div>
               </div>
             )}
-          </div>
+          </>
         );
       }
 
-      function Lane({ title, hint, tasks, lane, expandedTaskId, setExpandedTaskId, onDone, onMove, onEdit, onStart }){
+      function NavButton({ label, icon, active, onClick }){
         return (
-          <div className="card list" style={{padding:10}}>
-            <h2>
-              <span>{title}</span>
-              <span className="meta">{tasks.length}</span>
-            </h2>
-            <div className="small" style={{marginBottom:8}}>{hint}</div>
+          <button className={"navBtn" + (active ? " active" : "")} onClick={onClick} aria-label={label}>
+            <span className="navIcon" aria-hidden="true">{icon}</span>
+            <span className="navLabel">{label}</span>
+          </button>
+        );
+      }
+
+      function Lane({ title, subtitle, tasks, lane, expandedTaskId, setExpandedTaskId, onDone, onMove, onEdit, onStart }){
+        return (
+          <div className="card">
+            <div className="cardTitle">
+              <h2>{title}</h2>
+              <div className="meta">{tasks.length}</div>
+            </div>
+            <div className="small" style={{marginBottom:10}}>{subtitle}</div>
 
             {tasks.map(t => {
               const expanded = expandedTaskId === t.id;
@@ -917,12 +1168,13 @@
                       <p className="taskTitle">{t.title}</p>
                       <div className="taskMeta">
                         {kindChip}
-                        <span className="chip">{t.timerPreset || 15}m</span>
+                        <span className="chip gold">{t.timerPreset || 15}m</span>
                       </div>
                     </div>
+
                     <div className="row" style={{justifyContent:"flex-end"}}>
-                      <button className="miniBtn good" onClick={()=>onStart(t)}>Start</button>
-                      <button className="miniBtn" onClick={()=>onDone(t.id)}>Done</button>
+                      <button className="miniBtn gold" onClick={()=>onStart(t)}>Start</button>
+                      <button className="miniBtn good" onClick={()=>onDone(t.id)}>Done</button>
                       {lane !== "today" && <button className="miniBtn" onClick={()=>onMove(t.id,"today")}>→Today</button>}
                       {lane !== "later" && <button className="miniBtn" onClick={()=>onMove(t.id,"later")}>→Later</button>}
                       {lane !== "inbox" && <button className="miniBtn" onClick={()=>onMove(t.id,"inbox")}>→Inbox</button>}
@@ -934,7 +1186,7 @@
 
                   {expanded && (
                     <div className="details">
-                      <div className="small" style={{marginBottom:6}}><strong>Next tiny step</strong> (≤ 1 line)</div>
+                      <div className="small" style={{marginBottom:6}}><strong>Next tiny step</strong></div>
                       <input
                         className="input"
                         value={t.nextTinyStep || ""}
@@ -943,7 +1195,7 @@
                       />
 
                       <div className="row" style={{marginTop:10}}>
-                        <div style={{flex:1}}>
+                        <div style={{flex:1, minWidth: 120}}>
                           <div className="small" style={{marginBottom:6}}><strong>Timer</strong></div>
                           <select
                             className="input"
@@ -955,7 +1207,7 @@
                             <option value={45}>45m</option>
                           </select>
                         </div>
-                        <div style={{flex:1}}>
+                        <div style={{flex:1, minWidth: 140}}>
                           <div className="small" style={{marginBottom:6}}><strong>Type</strong></div>
                           <select
                             className="input"
@@ -970,6 +1222,7 @@
                       </div>
 
                       <div className="divider"></div>
+
                       <div className="small" style={{marginBottom:6}}><strong>Notes</strong> (optional)</div>
                       <textarea
                         className="textarea"
@@ -999,67 +1252,66 @@
           obedienceTomorrow:"",
         };
 
-        // gentle time-aware hint
         const hint =
-          phase === "morning" ? "Morning: Prime + choose Today + start one sprint."
+          phase === "morning" ? "Morning: Prime + choose Today + one sprint."
           : phase === "midday" ? "Midday: Terce + stewardship or project block."
           : phase === "evening" ? "Evening: Vespers + examen lines."
           : "Night: keep it minimal; one act of obedience is enough.";
 
         return (
           <div className="callout">
-            <div className="small" style={{marginBottom:8}}>{hint}</div>
+            <div className="small" style={{marginBottom:10}}>{hint}</div>
 
             <div className="row" style={{gap:10}}>
-              <label className="toggle">
+              <label className="chip" style={{cursor:"pointer"}}>
                 <input type="checkbox" checked={!!l.ora.prime}
                   onChange={()=>onPatch({ ora:{ prime: !l.ora.prime }})} />
-                Prime
+                <span>Prime</span>
               </label>
-              <label className="toggle">
+              <label className="chip" style={{cursor:"pointer"}}>
                 <input type="checkbox" checked={!!l.ora.terce}
                   onChange={()=>onPatch({ ora:{ terce: !l.ora.terce }})} />
-                Terce
+                <span>Terce</span>
               </label>
-              <label className="toggle">
+              <label className="chip" style={{cursor:"pointer"}}>
                 <input type="checkbox" checked={!!l.ora.vespers}
                   onChange={()=>onPatch({ ora:{ vespers: !l.ora.vespers }})} />
-                Vespers
+                <span>Vespers</span>
               </label>
-              <label className="toggle">
+              <label className="chip" style={{cursor:"pointer"}}>
                 <input type="checkbox" checked={!!l.ora.compline}
                   onChange={()=>onPatch({ ora:{ compline: !l.ora.compline }})} />
-                Compline
+                <span>Compline</span>
               </label>
             </div>
 
             <div className="divider"></div>
 
             <div className="row" style={{gap:10}}>
-              <label className="toggle">
+              <label className="chip" style={{cursor:"pointer"}}>
                 <input type="checkbox" checked={!!l.labora.stewardship}
                   onChange={()=>onPatch({ labora:{ stewardship: !l.labora.stewardship }})} />
-                Stewardship
+                <span>Stewardship</span>
               </label>
-              <label className="toggle">
+              <label className="chip" style={{cursor:"pointer"}}>
                 <input type="checkbox" checked={!!l.labora.projectBlock}
                   onChange={()=>onPatch({ labora:{ projectBlock: !l.labora.projectBlock }})} />
-                Project block
+                <span>Project block</span>
               </label>
-              <label className="toggle">
+              <label className="chip" style={{cursor:"pointer"}}>
                 <input type="checkbox" checked={!!l.pugna.training}
                   onChange={()=>onPatch({ pugna:{ training: !l.pugna.training }})} />
-                Training
+                <span>Training</span>
               </label>
-              <label className="toggle">
+              <label className="chip" style={{cursor:"pointer"}}>
                 <input type="checkbox" checked={!!l.pugna.custody}
                   onChange={()=>onPatch({ pugna:{ custody: !l.pugna.custody }})} />
-                Custody
+                <span>Custody</span>
               </label>
-              <label className="toggle">
+              <label className="chip" style={{cursor:"pointer"}}>
                 <input type="checkbox" checked={!!l.mercy}
                   onChange={()=>onPatch({ mercy: !l.mercy })} />
-                Mercy
+                <span>Mercy</span>
               </label>
             </div>
 
