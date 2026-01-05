@@ -1,1 +1,1663 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <title>Life Dashboard (Local + JSON Round-Trip)</title>
 
+    <!-- React 18 -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+    <!-- Babel for in-browser JSX (fine for v0) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+      :root {
+        --bg: #0b0f14;
+        --panel: #101826;
+        --panel2: #0f1520;
+        --text: #e6edf3;
+        --muted: #9fb0c0;
+        --line: #1f2a3a;
+        --good: #35c07a;
+        --warn: #f2c94c;
+        --bad: #ff5c5c;
+        --accent: #8ab4f8;
+        --chip: #162234;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
+          "Segoe UI Emoji";
+        background: radial-gradient(1200px 800px at 20% 0%, #101a2b 0%, var(--bg) 55%);
+        color: var(--text);
+      }
+
+      a { color: var(--accent); }
+
+      .app {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 18px 14px 40px;
+      }
+
+      .topbar {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+      }
+
+      .title {
+        display: flex;
+        gap: 10px;
+        align-items: baseline;
+      }
+
+      .title h1 {
+        font-size: 18px;
+        margin: 0;
+        letter-spacing: 0.2px;
+      }
+
+      .subtitle {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .controls {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+      }
+
+      button, input, textarea, select {
+        font: inherit;
+      }
+
+      .btn {
+        background: linear-gradient(180deg, #152238, #0f1624);
+        border: 1px solid var(--line);
+        color: var(--text);
+        padding: 8px 10px;
+        border-radius: 10px;
+        cursor: pointer;
+      }
+      .btn:hover { border-color: #2a3a52; }
+      .btn:active { transform: translateY(1px); }
+
+      .btn.primary {
+        background: linear-gradient(180deg, #24406c, #13213a);
+        border-color: #2b4d80;
+      }
+
+      .btn.danger {
+        background: linear-gradient(180deg, #5a1d1d, #2a1111);
+        border-color: #7a2a2a;
+      }
+
+      .grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: 1fr;
+      }
+
+      @media (min-width: 960px) {
+        .grid {
+          grid-template-columns: 1.2fr 0.9fr;
+          align-items: start;
+        }
+      }
+
+      .card {
+        background: linear-gradient(180deg, var(--panel), var(--panel2));
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 12px;
+      }
+
+      .card h2 {
+        font-size: 13px;
+        margin: 0 0 10px;
+        color: #dbe7f5;
+        letter-spacing: 0.2px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .card h3 {
+        font-size: 12px;
+        margin: 0 0 8px;
+        color: #dbe7f5;
+        letter-spacing: 0.2px;
+      }
+
+      .card h2 .meta {
+        color: var(--muted);
+        font-weight: 500;
+        font-size: 12px;
+      }
+
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .input {
+        width: 100%;
+        padding: 10px 10px;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        background: #0b1220;
+        color: var(--text);
+      }
+
+      .small {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .lanes {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: 1fr;
+      }
+
+      @media (min-width: 960px) {
+        .lanes {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+
+      .lane {
+        min-height: 180px;
+      }
+
+      .task {
+        border: 1px solid var(--line);
+        background: rgba(12, 18, 32, 0.75);
+        border-radius: 12px;
+        padding: 10px;
+        margin-bottom: 8px;
+      }
+
+      .taskTop {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        justify-content: space-between;
+      }
+
+      .taskTitle {
+        font-size: 13px;
+        line-height: 1.25;
+        margin: 0;
+      }
+
+      .taskMeta {
+        margin-top: 6px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .chip {
+        background: var(--chip);
+        border: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 11px;
+        padding: 3px 8px;
+        border-radius: 999px;
+      }
+
+      .chip.good { color: #baf3d6; border-color: #1f6a46; }
+      .chip.warn { color: #fff1b3; border-color: #6b5a1a; }
+      .chip.bad  { color: #ffb3b3; border-color: #6b1a1a; }
+
+      .taskActions {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        align-items: center;
+      }
+
+      .miniBtn {
+        border-radius: 10px;
+        padding: 6px 8px;
+        border: 1px solid var(--line);
+        background: #0b1220;
+        color: var(--text);
+        cursor: pointer;
+        font-size: 12px;
+      }
+      .miniBtn:hover { border-color: #2a3a52; }
+      .miniBtn.good { border-color: #1f6a46; }
+      .miniBtn.bad { border-color: #6b1a1a; }
+
+      .split {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: 1fr;
+      }
+
+      @media (min-width: 700px) {
+        .split {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      .divider {
+        height: 1px;
+        background: var(--line);
+        margin: 10px 0;
+      }
+
+      .textarea {
+        width: 100%;
+        min-height: 140px;
+        padding: 10px;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        background: #0b1220;
+        color: var(--text);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 12px;
+        line-height: 1.35;
+      }
+
+      .kpi {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .kpi .chip {
+        cursor: default;
+      }
+
+      .checkboxRow {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 10px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: rgba(12,18,32,.55);
+        margin-bottom: 8px;
+      }
+
+      .checkboxRow label {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .checkboxRow input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+      }
+
+      .footerNote {
+        margin-top: 14px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.35;
+      }
+
+      .toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(12,18,32,.55);
+      }
+
+      .twoColRight {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: 1fr;
+      }
+      @media (min-width: 700px) {
+        .twoColRight {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      .hintBox {
+        border: 1px dashed #2a3a52;
+        border-radius: 12px;
+        padding: 10px;
+        background: rgba(12,18,32,.35);
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useEffect, useMemo, useState } = React;
+
+      // -----------------------------
+      // Utilities
+      // -----------------------------
+      const LS_KEY = "lifeDashboardState_v2_formation";
+
+      // Local date ISO (YYYY-MM-DD) without UTC drift.
+      function localISODate(d = new Date()) {
+        const pad = (n) => String(n).padStart(2, "0");
+        const yyyy = d.getFullYear();
+        const mm = pad(d.getMonth() + 1);
+        const dd = pad(d.getDate());
+        return `${yyyy}-${mm}-${dd}`;
+      }
+
+      const uid = () =>
+        (crypto?.randomUUID
+          ? crypto.randomUUID()
+          : String(Date.now()) + "_" + Math.random().toString(16).slice(2));
+
+      function safeParseJSON(text) {
+        try {
+          const obj = JSON.parse(text);
+          return { ok: true, value: obj };
+        } catch (e) {
+          return { ok: false, error: e?.message || "Invalid JSON" };
+        }
+      }
+
+      function clampTop5Today(state) {
+        // Ensure Today lane has at most 5 items (keep earliest)
+        const todayTasks = state.tasks.filter((t) => t.lane === "today" && !t.done);
+        if (todayTasks.length <= 5) return state;
+        const sorted = [...todayTasks].sort((a, b) => (a.order || 0) - (b.order || 0));
+        const toMove = sorted.slice(5).map((t) => t.id);
+        const nextTasks = state.tasks.map((t) => {
+          if (toMove.includes(t.id)) return { ...t, lane: "week" };
+          return t;
+        });
+        return { ...state, tasks: nextTasks };
+      }
+
+      function startOfWeekMonday(date = new Date()) {
+        const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const day = d.getDay(); // 0 Sun .. 6 Sat
+        const diffToMon = (day === 0 ? -6 : 1 - day);
+        d.setDate(d.getDate() + diffToMon);
+        return d;
+      }
+
+      function endOfWeekSunday(date = new Date()) {
+        const mon = startOfWeekMonday(date);
+        const sun = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate());
+        sun.setDate(sun.getDate() + 6);
+        return sun;
+      }
+
+      function currentWeekKey(date = new Date()) {
+        // Keyed by Monday date
+        return localISODate(startOfWeekMonday(date));
+      }
+
+      function isOverdue(due) {
+        if (!due) return false;
+        const t = localISODate();
+        return due < t;
+      }
+
+      function dueChip(due) {
+        if (!due) return null;
+        const t = localISODate();
+        if (due < t) return { label: `Overdue ${due}`, kind: "bad" };
+        if (due === t) return { label: `Due today`, kind: "warn" };
+        return { label: `Due ${due}`, kind: "" };
+      }
+
+      // -----------------------------
+      // Formation defaults
+      // -----------------------------
+      const STRUGGLES = [
+        "none",
+        "acedia / sloth",
+        "distraction",
+        "anger",
+        "lust",
+        "gluttony",
+        "vainglory",
+        "pride",
+        "fear / anxiety",
+        "envy",
+        "greed",
+        "despair",
+      ];
+
+      const RECOVERIES = [
+        "prayer + return",
+        "confession planned",
+        "restitution / repair",
+        "boundary (block/limit)",
+        "accountability (tell mentor)",
+        "fasting / restraint",
+      ];
+
+      function defaultFormation() {
+        const t = localISODate();
+        return {
+          ruleVersion: "Templar-RulePack-v1",
+          // Daily ledger entries keyed by date
+          dailyLedger: [
+            {
+              date: t,
+              ora: { prime: false, terce: false, vespers: false, compline: false },
+              labora: { stewardship: false, projectBlock: false },
+              pugna: { training: false, custodyOfEyes: false },
+              mercy: false,
+
+              struggle: "none",
+              consent: "no", // "yes" | "no"
+              recovery: "prayer + return",
+
+              thanksgiving: "",
+              repentance: "",
+              obedienceTomorrow: "",
+            },
+          ],
+          // Weekly review keyed by weekStart (Monday)
+          weeklyReviews: [
+            {
+              weekStart: currentWeekKey(new Date()),
+              victories: "",
+              failures: "",
+              nextAim: "",
+            },
+          ],
+          // Redaction profile: what gets removed for check-ins
+          redactionProfile: {
+            redactTaskNotes: true,
+            redactProjectNotes: true,
+            redactPrivateFields: true,
+          },
+        };
+      }
+
+      // -----------------------------
+      // State normalize / default
+      // -----------------------------
+      function defaultState() {
+        const t = localISODate();
+        return {
+          meta: {
+            version: 2,
+            lastOpenedDate: t,
+          },
+          formation: defaultFormation(),
+          projects: [
+            { id: uid(), name: "Life Admin Reset", status: "active", notes: "" },
+            { id: uid(), name: "Primary Project", status: "active", notes: "" },
+          ],
+          routines: [
+            { id: uid(), label: "Prime (2–10m)", when: "morning", mvd: true, doneToday: false },
+            { id: uid(), label: "10 min movement (walk/mobility)", when: "morning", mvd: true, doneToday: false },
+            { id: uid(), label: "Plan Today (Top 3–5)", when: "morning", mvd: true, doneToday: false },
+            { id: uid(), label: "Terce (2–5m)", when: "midday", mvd: false, doneToday: false },
+            { id: uid(), label: "Admin Hour (one stewardship task)", when: "midday", mvd: false, doneToday: false },
+            { id: uid(), label: "Project Block (45–90m)", when: "midday", mvd: false, doneToday: false },
+            { id: uid(), label: "Vespers (2–10m)", when: "evening", mvd: true, doneToday: false },
+            { id: uid(), label: "Compline + Examen (3 lines)", when: "evening", mvd: true, doneToday: false },
+          ],
+          tasks: [
+            {
+              id: uid(),
+              title: "Add your first tasks via Inbox",
+              lane: "inbox",
+              done: false,
+              due: null,
+              notes: "",
+              tags: ["setup"],
+              projectId: null,
+              createdAt: new Date().toISOString(),
+              order: 1,
+            },
+            {
+              id: uid(),
+              title: "Pick Top 3–5 for Today",
+              lane: "today",
+              done: false,
+              due: t,
+              notes: "",
+              tags: [],
+              projectId: null,
+              createdAt: new Date().toISOString(),
+              order: 2,
+            },
+            {
+              id: uid(),
+              title: "Create 1 Ops checklist card (insurance/taxes/docs/credit)",
+              lane: "ops",
+              done: false,
+              due: null,
+              notes:
+                "Example: ‘Taxes packet’ or ‘Insurance ID + phone numbers’ (keep no passwords).",
+              tags: ["ops"],
+              projectId: null,
+              createdAt: new Date().toISOString(),
+              order: 3,
+            },
+          ],
+        };
+      }
+
+      function normalizeFormation(f) {
+        const base = defaultFormation();
+        const obj = f && typeof f === "object" ? f : {};
+
+        const dailyLedger = Array.isArray(obj.dailyLedger) ? obj.dailyLedger : base.dailyLedger;
+        const weeklyReviews = Array.isArray(obj.weeklyReviews) ? obj.weeklyReviews : base.weeklyReviews;
+
+        const norm = {
+          ruleVersion: String(obj.ruleVersion || base.ruleVersion),
+          dailyLedger: dailyLedger.map((e) => ({
+            date: String(e.date || localISODate()).slice(0, 10),
+            ora: {
+              prime: !!e?.ora?.prime,
+              terce: !!e?.ora?.terce,
+              vespers: !!e?.ora?.vespers,
+              compline: !!e?.ora?.compline,
+            },
+            labora: {
+              stewardship: !!e?.labora?.stewardship,
+              projectBlock: !!e?.labora?.projectBlock,
+            },
+            pugna: {
+              training: !!e?.pugna?.training,
+              custodyOfEyes: !!e?.pugna?.custodyOfEyes,
+            },
+            mercy: !!e.mercy,
+            struggle: STRUGGLES.includes(e.struggle) ? e.struggle : "none",
+            consent: e.consent === "yes" ? "yes" : "no",
+            recovery: RECOVERIES.includes(e.recovery) ? e.recovery : "prayer + return",
+            thanksgiving: String(e.thanksgiving || "").slice(0, 400),
+            repentance: String(e.repentance || "").slice(0, 400),
+            obedienceTomorrow: String(e.obedienceTomorrow || "").slice(0, 240),
+          })),
+          weeklyReviews: weeklyReviews.map((w) => ({
+            weekStart: String(w.weekStart || currentWeekKey(new Date())).slice(0, 10),
+            victories: String(w.victories || "").slice(0, 800),
+            failures: String(w.failures || "").slice(0, 800),
+            nextAim: String(w.nextAim || "").slice(0, 300),
+          })),
+          redactionProfile: {
+            redactTaskNotes: obj?.redactionProfile?.redactTaskNotes !== false,
+            redactProjectNotes: obj?.redactionProfile?.redactProjectNotes !== false,
+            redactPrivateFields: obj?.redactionProfile?.redactPrivateFields !== false,
+          },
+        };
+
+        return norm;
+      }
+
+      function ensureTodayLedger(formation) {
+        const t = localISODate();
+        const has = formation.dailyLedger.some((e) => e.date === t);
+        if (has) return formation;
+        const entry = {
+          date: t,
+          ora: { prime: false, terce: false, vespers: false, compline: false },
+          labora: { stewardship: false, projectBlock: false },
+          pugna: { training: false, custodyOfEyes: false },
+          mercy: false,
+          struggle: "none",
+          consent: "no",
+          recovery: "prayer + return",
+          thanksgiving: "",
+          repentance: "",
+          obedienceTomorrow: "",
+        };
+        return { ...formation, dailyLedger: [...formation.dailyLedger, entry] };
+      }
+
+      function ensureCurrentWeekReview(formation) {
+        const wk = currentWeekKey(new Date());
+        const has = formation.weeklyReviews.some((w) => w.weekStart === wk);
+        if (has) return formation;
+        const next = {
+          weekStart: wk,
+          victories: "",
+          failures: "",
+          nextAim: "",
+        };
+        return { ...formation, weeklyReviews: [...formation.weeklyReviews, next] };
+      }
+
+      function normalizeState(input) {
+        const base = defaultState();
+        const s = input && typeof input === "object" ? input : {};
+
+        const tasks = Array.isArray(s.tasks) ? s.tasks : base.tasks;
+        const projects = Array.isArray(s.projects) ? s.projects : base.projects;
+        const routines = Array.isArray(s.routines) ? s.routines : base.routines;
+        const meta = (s.meta && typeof s.meta === "object") ? s.meta : base.meta;
+        const formation = normalizeFormation(s.formation || base.formation);
+
+        let norm = {
+          meta: {
+            ...base.meta,
+            ...meta,
+            version: 2,
+            lastOpenedDate: meta.lastOpenedDate ? String(meta.lastOpenedDate).slice(0, 10) : localISODate(),
+          },
+          formation,
+          tasks: tasks.map((t) => ({
+            id: String(t.id || uid()),
+            title: String(t.title || "").slice(0, 240),
+            lane: ["inbox", "today", "week", "ops", "project"].includes(t.lane) ? t.lane : "inbox",
+            done: !!t.done,
+            due: t.due ? String(t.due).slice(0, 10) : null,
+            notes: t.notes ? String(t.notes).slice(0, 2000) : "",
+            tags: Array.isArray(t.tags) ? t.tags.map(String).slice(0, 12) : [],
+            projectId: t.projectId ? String(t.projectId) : null,
+            createdAt: t.createdAt ? String(t.createdAt) : new Date().toISOString(),
+            order: typeof t.order === "number" ? t.order : 0,
+          })),
+          projects: projects.map((p) => ({
+            id: String(p.id || uid()),
+            name: String(p.name || "Untitled Project").slice(0, 120),
+            status: ["active", "paused", "done"].includes(p.status) ? p.status : "active",
+            notes: p.notes ? String(p.notes).slice(0, 2000) : "",
+          })),
+          routines: routines.map((r) => ({
+            id: String(r.id || uid()),
+            label: String(r.label || "Routine Item").slice(0, 120),
+            when: ["morning", "midday", "evening"].includes(r.when) ? r.when : "morning",
+            mvd: !!r.mvd,
+            doneToday: !!r.doneToday,
+          })),
+        };
+
+        // Ensure formation entries exist for today + current week
+        norm = {
+          ...norm,
+          formation: ensureCurrentWeekReview(ensureTodayLedger(norm.formation)),
+        };
+
+        return clampTop5Today(norm);
+      }
+
+      function loadState() {
+        const raw = localStorage.getItem(LS_KEY);
+        if (!raw) return defaultState();
+        const parsed = safeParseJSON(raw);
+        if (!parsed.ok) return defaultState();
+        return normalizeState(parsed.value);
+      }
+
+      function saveState(state) {
+        localStorage.setItem(LS_KEY, JSON.stringify(state, null, 2));
+      }
+
+      // Redacted export for “check-in”
+      function redactStateForCheckin(state) {
+        const rp = state.formation?.redactionProfile || {
+          redactTaskNotes: true,
+          redactProjectNotes: true,
+          redactPrivateFields: true,
+        };
+
+        // Keep essentials, strip notes/journaling.
+        const tasks = state.tasks.map((t) => ({
+          id: t.id,
+          title: t.title,
+          lane: t.lane,
+          done: t.done,
+          due: t.due,
+          tags: t.tags,
+          projectId: t.projectId,
+          createdAt: t.createdAt,
+          order: t.order,
+          notes: rp.redactTaskNotes ? "" : (t.notes || ""),
+        }));
+
+        const projects = state.projects.map((p) => ({
+          id: p.id,
+          name: p.name,
+          status: p.status,
+          notes: rp.redactProjectNotes ? "" : (p.notes || ""),
+        }));
+
+        // Formation: keep the ledger, but optionally redact text fields
+        const formation = normalizeFormation(state.formation || defaultFormation());
+        const formationSafe = {
+          ruleVersion: formation.ruleVersion,
+          redactionProfile: formation.redactionProfile,
+          dailyLedger: formation.dailyLedger.map((e) => ({
+            date: e.date,
+            ora: e.ora,
+            labora: e.labora,
+            pugna: e.pugna,
+            mercy: e.mercy,
+            struggle: e.struggle,
+            consent: e.consent,
+            recovery: e.recovery,
+            thanksgiving: rp.redactPrivateFields ? "" : e.thanksgiving,
+            repentance: rp.redactPrivateFields ? "" : e.repentance,
+            obedienceTomorrow: rp.redactPrivateFields ? "" : e.obedienceTomorrow,
+          })),
+          weeklyReviews: formation.weeklyReviews.map((w) => ({
+            weekStart: w.weekStart,
+            victories: rp.redactPrivateFields ? "" : w.victories,
+            failures: rp.redactPrivateFields ? "" : w.failures,
+            nextAim: rp.redactPrivateFields ? "" : w.nextAim,
+          })),
+        };
+
+        // Meta: minimal
+        const meta = {
+          version: state.meta?.version || 2,
+          lastOpenedDate: state.meta?.lastOpenedDate || localISODate(),
+          exportedAs: "checkin_redacted",
+        };
+
+        // Routines: optional; keep completion booleans only (no sensitive text anyway)
+        const routines = state.routines.map((r) => ({
+          id: r.id,
+          label: r.label,
+          when: r.when,
+          mvd: r.mvd,
+          doneToday: r.doneToday,
+        }));
+
+        return { meta, formation: formationSafe, projects, routines, tasks };
+      }
+
+      // -----------------------------
+      // App
+      // -----------------------------
+      function App() {
+        const [state, setState] = useState(() => loadState());
+        const [newTitle, setNewTitle] = useState("");
+        const [newLane, setNewLane] = useState("inbox");
+        const [newDue, setNewDue] = useState("");
+        const [newProjectId, setNewProjectId] = useState("");
+
+        const [showJSON, setShowJSON] = useState(false);
+        const [jsonText, setJsonText] = useState("");
+        const [jsonMsg, setJsonMsg] = useState("");
+
+        const [mvdMode, setMvdMode] = useState(false);
+
+        // Daily rollover: if opened on a new day, reset routine checks; move stale Today to Week; ensure daily ledger exists
+        useEffect(() => {
+          const t = localISODate();
+          if (state.meta.lastOpenedDate !== t) {
+            const rolled = {
+              ...state,
+              meta: { ...state.meta, lastOpenedDate: t },
+              routines: state.routines.map((r) => ({ ...r, doneToday: false })),
+              tasks: state.tasks.map((task) => {
+                if (task.lane === "today" && !task.done) {
+                  return { ...task, lane: "week" };
+                }
+                return task;
+              }),
+              formation: ensureCurrentWeekReview(ensureTodayLedger(state.formation)),
+            };
+            setState(normalizeState(rolled));
+          } else {
+            // Ensure formation entries even on same day (if imported older JSON)
+            setState((prev) => normalizeState(prev));
+          }
+          // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, []);
+
+        useEffect(() => {
+          saveState(state);
+        }, [state]);
+
+        const projectMap = useMemo(() => {
+          const m = new Map();
+          state.projects.forEach((p) => m.set(p.id, p));
+          return m;
+        }, [state.projects]);
+
+        const laneTitle = (lane) =>
+          ({
+            inbox: "Inbox (Capture Tray)",
+            today: "Today (Work Mat ≤ 5)",
+            week: "This Week",
+            ops: "Ops (Stewardship)",
+            project: "Projects (Next Actions)",
+          }[lane] || lane);
+
+        const tasksByLane = useMemo(() => {
+          const lanes = { inbox: [], today: [], week: [], ops: [], project: [] };
+          const tasks = [...state.tasks]
+            .filter((t) => !t.done)
+            .sort((a, b) => (a.order || 0) - (b.order || 0));
+          for (const t of tasks) {
+            if (!lanes[t.lane]) lanes[t.lane] = [];
+            lanes[t.lane].push(t);
+          }
+          return lanes;
+        }, [state.tasks]);
+
+        const kpis = useMemo(() => {
+          const open = state.tasks.filter((t) => !t.done).length;
+          const done = state.tasks.filter((t) => t.done).length;
+          const overdue = state.tasks.filter((t) => !t.done && isOverdue(t.due)).length;
+          const todayCount = state.tasks.filter((t) => !t.done && t.lane === "today").length;
+          const routineDone = state.routines.filter((r) => r.doneToday).length;
+          const routineTotal = state.routines.length;
+
+          const todaysLedger = getTodayLedger(state.formation);
+          const oraCount =
+            (todaysLedger?.ora?.prime ? 1 : 0) +
+            (todaysLedger?.ora?.terce ? 1 : 0) +
+            (todaysLedger?.ora?.vespers ? 1 : 0) +
+            (todaysLedger?.ora?.compline ? 1 : 0);
+
+          return {
+            open,
+            done,
+            overdue,
+            todayCount,
+            routineDone,
+            routineTotal,
+            oraCount,
+          };
+        }, [state.tasks, state.routines, state.formation]);
+
+        function commit(next) {
+          setState(normalizeState(next));
+        }
+
+        function addTask() {
+          const title = newTitle.trim();
+          if (!title) return;
+          const task = {
+            id: uid(),
+            title,
+            lane: newLane,
+            done: false,
+            due: newDue ? newDue : null,
+            notes: "",
+            tags: [],
+            projectId: newProjectId || null,
+            createdAt: new Date().toISOString(),
+            order: Date.now(),
+          };
+
+          let next = { ...state, tasks: [...state.tasks, task] };
+          next = clampTop5Today(next);
+
+          setNewTitle("");
+          setNewDue("");
+          setNewProjectId("");
+          commit(next);
+        }
+
+        function moveTask(taskId, lane) {
+          let next = {
+            ...state,
+            tasks: state.tasks.map((t) => (t.id === taskId ? { ...t, lane } : t)),
+          };
+          next = clampTop5Today(next);
+          commit(next);
+        }
+
+        function toggleDone(taskId) {
+          const next = {
+            ...state,
+            tasks: state.tasks.map((t) => (t.id === taskId ? { ...t, done: !t.done } : t)),
+          };
+          commit(next);
+        }
+
+        function editNotes(taskId, notes) {
+          const next = {
+            ...state,
+            tasks: state.tasks.map((t) => (t.id === taskId ? { ...t, notes } : t)),
+          };
+          commit(next);
+        }
+
+        function setDue(taskId, due) {
+          const next = {
+            ...state,
+            tasks: state.tasks.map((t) => (t.id === taskId ? { ...t, due: due || null } : t)),
+          };
+          commit(next);
+        }
+
+        function setProject(taskId, projectId) {
+          const next = {
+            ...state,
+            tasks: state.tasks.map((t) => (t.id === taskId ? { ...t, projectId: projectId || null } : t)),
+          };
+          commit(next);
+        }
+
+        function addProject(name) {
+          const n = name.trim();
+          if (!n) return;
+          const next = {
+            ...state,
+            projects: [...state.projects, { id: uid(), name: n, status: "active", notes: "" }],
+          };
+          commit(next);
+        }
+
+        function toggleRoutine(id) {
+          const next = {
+            ...state,
+            routines: state.routines.map((r) => (r.id === id ? { ...r, doneToday: !r.doneToday } : r)),
+          };
+          commit(next);
+        }
+
+        function resetAll() {
+          if (!confirm("Reset everything to defaults? This wipes local data.")) return;
+          const next = defaultState();
+          commit(next);
+        }
+
+        function markAllTodayDone() {
+          const next = {
+            ...state,
+            tasks: state.tasks.map((t) => (t.lane === "today" ? { ...t, done: true } : t)),
+          };
+          commit(next);
+        }
+
+        // Montessori-ish scaffolding: MVD mode hides non-MVD routine items visually
+        const routineShown = useMemo(() => {
+          return state.routines
+            .filter((r) => (mvdMode ? r.mvd : true))
+            .sort((a, b) => {
+              const order = { morning: 0, midday: 1, evening: 2 };
+              return (order[a.when] - order[b.when]) || a.label.localeCompare(b.label);
+            });
+        }, [state.routines, mvdMode]);
+
+        // JSON export/import
+        function exportJSON(full = true) {
+          const payload = full ? state : redactStateForCheckin(state);
+          const text = JSON.stringify(payload, null, 2);
+          setJsonText(text);
+          setShowJSON(true);
+          setJsonMsg("");
+
+          const label = full ? "Full JSON" : "Check-in JSON";
+          navigator.clipboard?.writeText(text).then(
+            () => setJsonMsg(`Copied ${label} to clipboard ✅`),
+            () => setJsonMsg(`Could not copy automatically. You can copy manually from the box.`)
+          );
+        }
+
+        function importJSON() {
+          const parsed = safeParseJSON(jsonText);
+          if (!parsed.ok) {
+            setJsonMsg("Import failed: " + parsed.error);
+            return;
+          }
+          const next = normalizeState(parsed.value);
+          setJsonMsg("Imported ✅");
+          setShowJSON(false);
+          commit(next);
+        }
+
+        // Formation helpers
+        function updateTodayLedger(patch) {
+          const t = localISODate();
+          const formation = ensureTodayLedger(state.formation);
+          const nextFormation = {
+            ...formation,
+            dailyLedger: formation.dailyLedger.map((e) =>
+              e.date === t ? deepMergeLedger(e, patch) : e
+            ),
+          };
+          commit({ ...state, formation: nextFormation });
+        }
+
+        function updateCurrentWeekReview(patch) {
+          const wk = currentWeekKey(new Date());
+          const formation = ensureCurrentWeekReview(state.formation);
+          const nextFormation = {
+            ...formation,
+            weeklyReviews: formation.weeklyReviews.map((w) =>
+              w.weekStart === wk ? { ...w, ...patch } : w
+            ),
+          };
+          commit({ ...state, formation: nextFormation });
+        }
+
+        const todayLedger = useMemo(() => getTodayLedger(state.formation), [state.formation]);
+        const weekReview = useMemo(() => getCurrentWeekReview(state.formation), [state.formation]);
+
+        const weekStart = startOfWeekMonday(new Date());
+        const weekEnd = endOfWeekSunday(new Date());
+
+        return (
+          <div className="app">
+            <div className="topbar">
+              <div className="title">
+                <h1>Life Dashboard</h1>
+                <div className="subtitle">
+                  Local-first • JSON round-trip • {localISODate()}
+                </div>
+              </div>
+
+              <div className="controls">
+                <div className="kpi">
+                  <span className="chip">Open: {kpis.open}</span>
+                  <span className={`chip ${kpis.overdue ? "bad" : ""}`}>Overdue: {kpis.overdue}</span>
+                  <span className={`chip ${kpis.todayCount > 5 ? "bad" : ""}`}>Today: {kpis.todayCount}/5</span>
+                  <span className="chip">Routine: {kpis.routineDone}/{kpis.routineTotal}</span>
+                  <span className="chip">Ora: {kpis.oraCount}/4</span>
+                </div>
+
+                <button className="btn primary" onClick={() => exportJSON(true)}>Export Full</button>
+                <button className="btn" onClick={() => exportJSON(false)}>Export Check-in</button>
+                <button className="btn" onClick={() => setShowJSON(v => !v)}>Import/Inspect</button>
+                <button className="btn danger" onClick={resetAll}>Reset</button>
+              </div>
+            </div>
+
+            <div className="grid">
+              {/* LEFT */}
+              <div className="card">
+                <h2>
+                  <span>Capture + Lanes</span>
+                  <span className="meta">Keep Today ≤ 5. Everything else lives in Week/Ops/Projects.</span>
+                </h2>
+
+                <div className="row" style={{ marginBottom: 10 }}>
+                  <input
+                    className="input"
+                    placeholder="Quick add (Inbox by default)…"
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") addTask(); }}
+                  />
+                </div>
+
+                <div className="row" style={{ marginBottom: 10 }}>
+                  <select className="input" value={newLane} onChange={(e) => setNewLane(e.target.value)}>
+                    <option value="inbox">Inbox</option>
+                    <option value="today">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="ops">Ops</option>
+                    <option value="project">Projects</option>
+                  </select>
+
+                  <input
+                    className="input"
+                    type="date"
+                    value={newDue}
+                    onChange={(e) => setNewDue(e.target.value)}
+                    title="Optional due date"
+                  />
+
+                  <select
+                    className="input"
+                    value={newProjectId}
+                    onChange={(e) => setNewProjectId(e.target.value)}
+                    title="Optional project link"
+                  >
+                    <option value="">No Project</option>
+                    {state.projects.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+
+                  <button className="btn primary" onClick={addTask}>Add</button>
+                </div>
+
+                <div className="lanes">
+                  {["inbox", "today", "week", "ops", "project"].map((lane) => (
+                    <div key={lane} className={"card lane"} style={{ padding: 10 }}>
+                      <h2>
+                        <span>{laneTitle(lane)}</span>
+                        <span className="meta">{tasksByLane[lane]?.length || 0}</span>
+                      </h2>
+
+                      {lane === "today" && (
+                        <div className="row" style={{ marginBottom: 8, justifyContent: "space-between" }}>
+                          <span className="small">Rule: max 5 items on the Work Mat.</span>
+                          <button className="miniBtn good" onClick={markAllTodayDone}>Finish Today</button>
+                        </div>
+                      )}
+
+                      {(tasksByLane[lane] || []).map((task) => {
+                        const chip = dueChip(task.due);
+                        const proj = task.projectId ? projectMap.get(task.projectId) : null;
+                        return (
+                          <div className="task" key={task.id}>
+                            <div className="taskTop">
+                              <div style={{ flex: 1 }}>
+                                <p className="taskTitle">{task.title}</p>
+                                <div className="taskMeta">
+                                  <span className="chip">{lane}</span>
+                                  {chip && <span className={`chip ${chip.kind}`}>{chip.label}</span>}
+                                  {proj && <span className="chip">Project: {proj.name}</span>}
+                                </div>
+                              </div>
+
+                              <div className="taskActions">
+                                <button className="miniBtn good" onClick={() => toggleDone(task.id)}>Done</button>
+                                {lane !== "today" && <button className="miniBtn" onClick={() => moveTask(task.id, "today")}>→ Today</button>}
+                                {lane !== "week" && <button className="miniBtn" onClick={() => moveTask(task.id, "week")}>→ Week</button>}
+                                {lane !== "ops" && <button className="miniBtn" onClick={() => moveTask(task.id, "ops")}>→ Ops</button>}
+                                {lane !== "project" && <button className="miniBtn" onClick={() => moveTask(task.id, "project")}>→ Projects</button>}
+                                {lane !== "inbox" && <button className="miniBtn" onClick={() => moveTask(task.id, "inbox")}>→ Inbox</button>}
+                              </div>
+                            </div>
+
+                            <div className="divider"></div>
+
+                            <div className="split">
+                              <div>
+                                <div className="small" style={{ marginBottom: 6 }}>Notes (private)</div>
+                                <textarea
+                                  className="textarea"
+                                  style={{ minHeight: 90 }}
+                                  value={task.notes}
+                                  placeholder="Keep notes brief. If it’s a checklist, write steps here."
+                                  onChange={(e) => editNotes(task.id, e.target.value)}
+                                />
+                              </div>
+                              <div>
+                                <div className="small" style={{ marginBottom: 6 }}>Due date</div>
+                                <input
+                                  className="input"
+                                  type="date"
+                                  value={task.due || ""}
+                                  onChange={(e) => setDue(task.id, e.target.value)}
+                                />
+
+                                <div className="small" style={{ margin: "10px 0 6px" }}>Project link</div>
+                                <select
+                                  className="input"
+                                  value={task.projectId || ""}
+                                  onChange={(e) => setProject(task.id, e.target.value)}
+                                >
+                                  <option value="">No Project</option>
+                                  {state.projects.map((p) => (
+                                    <option key={p.id} value={p.id}>{p.name}</option>
+                                  ))}
+                                </select>
+
+                                <div className="divider"></div>
+                                <div className="hintBox small">
+                                  <strong>Rule cue:</strong> If this is stewardship (insurance/taxes/docs/credit),
+                                  move it to <em>Ops</em>. If it’s “next action” for a venture, move it to <em>Projects</em>.
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {(tasksByLane[lane] || []).length === 0 && (
+                        <div className="small">No items here.</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="footerNote">
+                  <strong>Daily rule:</strong> If you feel overwhelmed, move everything back to <em>Week</em>,
+                  then repopulate <em>Today</em> with a fresh Top 3–5.
+                </div>
+              </div>
+
+              {/* RIGHT */}
+              <div className="card">
+                <h2>
+                  <span>Rule + Formation</span>
+                  <span className="meta">Private-first. “Check-in export” is redacted by design.</span>
+                </h2>
+
+                <div className="row" style={{ justifyContent: "space-between", marginBottom: 10 }}>
+                  <div className="toggle">
+                    <input
+                      type="checkbox"
+                      checked={mvdMode}
+                      onChange={(e) => setMvdMode(e.target.checked)}
+                      id="mvd"
+                    />
+                    <label htmlFor="mvd" style={{ cursor: "pointer" }}>
+                      Minimum Viable Day mode
+                    </label>
+                  </div>
+                  <div className="small">MVD hides non-essential routine items.</div>
+                </div>
+
+                {/* Routine */}
+                <h3>Routine</h3>
+                {routineShown.map((r) => (
+                  <div className="checkboxRow" key={r.id}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={r.doneToday}
+                        onChange={() => toggleRoutine(r.id)}
+                      />
+                      <span>{r.label}</span>
+                    </label>
+                    <span className="chip">{r.when}{r.mvd ? " • MVD" : ""}</span>
+                  </div>
+                ))}
+
+                <div className="divider"></div>
+
+                {/* Daily Ledger */}
+                <h3>Daily Ledger (shareable)</h3>
+                <div className="small" style={{ marginBottom: 8 }}>
+                  Fidelity to the means: Ora • Labora • Pugna + Mercy. Minimal words. No shame loops.
+                </div>
+
+                <div className="twoColRight">
+                  <div className="task">
+                    <div className="small" style={{ marginBottom: 8 }}><strong>Ora</strong> (Hours)</div>
+                    <div className="checkboxRow">
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={!!todayLedger?.ora?.prime}
+                          onChange={() => updateTodayLedger({ ora: { prime: !todayLedger.ora.prime } })}
+                        />
+                        <span>Prime</span>
+                      </label>
+                      <span className="chip">morning</span>
+                    </div>
+                    <div className="checkboxRow">
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={!!todayLedger?.ora?.terce}
+                          onChange={() => updateTodayLedger({ ora: { terce: !todayLedger.ora.terce } })}
+                        />
+                        <span>Terce</span>
+                      </label>
+                      <span className="chip">midday</span>
+                    </div>
+                    <div className="checkboxRow">
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={!!todayLedger?.ora?.vespers}
+                          onChange={() => updateTodayLedger({ ora: { vespers: !todayLedger.ora.vespers } })}
+                        />
+                        <span>Vespers</span>
+                      </label>
+                      <span className="chip">evening</span>
+                    </div>
+                    <div className="checkboxRow">
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={!!todayLedger?.ora?.compline}
+                          onChange={() => updateTodayLedger({ ora: { compline: !todayLedger.ora.compline } })}
+                        />
+                        <span>Compline</span>
+                      </label>
+                      <span className="chip">night</span>
+                    </div>
+                  </div>
+
+                  <div className="task">
+                    <div className="small" style={{ marginBottom: 8 }}><strong>Labora • Pugna • Mercy</strong></div>
+
+                    <div className="checkboxRow">
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={!!todayLedger?.labora?.stewardship}
+                          onChange={() => updateTodayLedger({ labora: { stewardship: !todayLedger.labora.stewardship } })}
+                        />
+                        <span>Stewardship (Ops)</span>
+                      </label>
+                      <span className="chip">Labora</span>
+                    </div>
+
+                    <div className="checkboxRow">
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={!!todayLedger?.labora?.projectBlock}
+                          onChange={() => updateTodayLedger({ labora: { projectBlock: !todayLedger.labora.projectBlock } })}
+                        />
+                        <span>Project block</span>
+                      </label>
+                      <span className="chip">Labora</span>
+                    </div>
+
+                    <div className="checkboxRow">
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={!!todayLedger?.pugna?.training}
+                          onChange={() => updateTodayLedger({ pugna: { training: !todayLedger.pugna.training } })}
+                        />
+                        <span>Training</span>
+                      </label>
+                      <span className="chip">Pugna</span>
+                    </div>
+
+                    <div className="checkboxRow">
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={!!todayLedger?.pugna?.custodyOfEyes}
+                          onChange={() => updateTodayLedger({ pugna: { custodyOfEyes: !todayLedger.pugna.custodyOfEyes } })}
+                        />
+                        <span>Custody of eyes</span>
+                      </label>
+                      <span className="chip">Pugna</span>
+                    </div>
+
+                    <div className="checkboxRow">
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={!!todayLedger?.mercy}
+                          onChange={() => updateTodayLedger({ mercy: !todayLedger.mercy })}
+                        />
+                        <span>Act of mercy</span>
+                      </label>
+                      <span className="chip">Mercy</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="task">
+                  <div className="twoColRight">
+                    <div>
+                      <div className="small" style={{ marginBottom: 6 }}><strong>Primary struggle</strong></div>
+                      <select
+                        className="input"
+                        value={todayLedger?.struggle || "none"}
+                        onChange={(e) => updateTodayLedger({ struggle: e.target.value })}
+                      >
+                        {STRUGGLES.map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <div className="small" style={{ marginBottom: 6 }}><strong>Consent</strong> (did I consent?)</div>
+                      <select
+                        className="input"
+                        value={todayLedger?.consent || "no"}
+                        onChange={(e) => updateTodayLedger({ consent: e.target.value })}
+                      >
+                        <option value="no">no</option>
+                        <option value="yes">yes</option>
+                      </select>
+                    </div>
+
+                    <div style={{ gridColumn: "1 / -1" }}>
+                      <div className="small" style={{ marginBottom: 6 }}><strong>Recovery</strong></div>
+                      <select
+                        className="input"
+                        value={todayLedger?.recovery || "prayer + return"}
+                        onChange={(e) => updateTodayLedger({ recovery: e.target.value })}
+                      >
+                        {RECOVERIES.map((r) => (
+                          <option key={r} value={r}>{r}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="divider"></div>
+
+                  <div className="split">
+                    <div>
+                      <div className="small" style={{ marginBottom: 6 }}><strong>Thanksgiving</strong> (1 line)</div>
+                      <input
+                        className="input"
+                        value={todayLedger?.thanksgiving || ""}
+                        onChange={(e) => updateTodayLedger({ thanksgiving: e.target.value })}
+                        placeholder="One grace I received today…"
+                      />
+                    </div>
+                    <div>
+                      <div className="small" style={{ marginBottom: 6 }}><strong>Repentance</strong> (1 line)</div>
+                      <input
+                        className="input"
+                        value={todayLedger?.repentance || ""}
+                        onChange={(e) => updateTodayLedger({ repentance: e.target.value })}
+                        placeholder="Where I fell / what I’ll correct…"
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: 10 }}>
+                    <div className="small" style={{ marginBottom: 6 }}><strong>Tomorrow’s obedience</strong> (1 next act)</div>
+                    <input
+                      className="input"
+                      value={todayLedger?.obedienceTomorrow || ""}
+                      onChange={(e) => updateTodayLedger({ obedienceTomorrow: e.target.value })}
+                      placeholder="The single next act of obedience tomorrow…"
+                    />
+                  </div>
+                </div>
+
+                <div className="divider"></div>
+
+                {/* Weekly Review */}
+                <h3>Weekly Review</h3>
+                <div className="small" style={{ marginBottom: 8 }}>
+                  Week: {localISODate(weekStart)} → {localISODate(weekEnd)} (key: {weekReview?.weekStart})
+                </div>
+
+                <div className="task">
+                  <div className="small" style={{ marginBottom: 6 }}><strong>Victories</strong></div>
+                  <textarea
+                    className="textarea"
+                    style={{ minHeight: 70 }}
+                    value={weekReview?.victories || ""}
+                    onChange={(e) => updateCurrentWeekReview({ victories: e.target.value })}
+                    placeholder="Where I kept fidelity; what grew…"
+                  />
+                  <div className="small" style={{ margin: "10px 0 6px" }}><strong>Failures</strong></div>
+                  <textarea
+                    className="textarea"
+                    style={{ minHeight: 70 }}
+                    value={weekReview?.failures || ""}
+                    onChange={(e) => updateCurrentWeekReview({ failures: e.target.value })}
+                    placeholder="Where I consented; patterns to watch…"
+                  />
+                  <div className="small" style={{ margin: "10px 0 6px" }}><strong>Next aim</strong> (one focus)</div>
+                  <input
+                    className="input"
+                    value={weekReview?.nextAim || ""}
+                    onChange={(e) => updateCurrentWeekReview({ nextAim: e.target.value })}
+                    placeholder="One aim for the coming week…"
+                  />
+                </div>
+
+                <div className="divider"></div>
+
+                <ProjectPanel state={state} addProject={addProject} commit={commit} />
+
+                <div className="divider"></div>
+
+                <h2>
+                  <span>JSON Round-Trip</span>
+                  <span className="meta">Export → paste to ChatGPT → import updated JSON.</span>
+                </h2>
+
+                <ol className="small" style={{ lineHeight: 1.45 }}>
+                  <li>Use <strong>Export Full</strong> for private coaching.</li>
+                  <li>Use <strong>Export Check-in</strong> for “mentor-ready” data (redacted).</li>
+                  <li>Paste returned JSON into the box below and click <strong>Import JSON</strong>.</li>
+                </ol>
+
+                {showJSON && (
+                  <>
+                    <textarea
+                      className="textarea"
+                      value={jsonText}
+                      onChange={(e) => setJsonText(e.target.value)}
+                      placeholder="Paste JSON here to import…"
+                    />
+                    <div className="row" style={{ marginTop: 8, justifyContent: "space-between" }}>
+                      <div className="small">{jsonMsg}</div>
+                      <div className="row">
+                        <button className="btn" onClick={() => setShowJSON(false)}>Close</button>
+                        <button className="btn primary" onClick={importJSON}>Import JSON</button>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {!showJSON && (
+                  <div className="small">
+                    Tip: Ask me to reorder Today (≤5), and to keep at least 1 Ora, 1 stewardship Ops, and 1 mission/project act.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      function deepMergeLedger(entry, patch) {
+        // Patch can include partial nested keys like {ora:{prime:true}}.
+        const out = { ...entry };
+
+        const mergeObj = (a, b) => {
+          const r = { ...a };
+          for (const k of Object.keys(b || {})) {
+            if (b[k] && typeof b[k] === "object" && !Array.isArray(b[k])) {
+              r[k] = mergeObj(a?.[k] || {}, b[k]);
+            } else {
+              r[k] = b[k];
+            }
+          }
+          return r;
+        };
+
+        return mergeObj(out, patch);
+      }
+
+      function getTodayLedger(formation) {
+        const t = localISODate();
+        const f = ensureTodayLedger(normalizeFormation(formation || defaultFormation()));
+        return f.dailyLedger.find((e) => e.date === t) || f.dailyLedger[f.dailyLedger.length - 1];
+      }
+
+      function getCurrentWeekReview(formation) {
+        const wk = currentWeekKey(new Date());
+        const f = ensureCurrentWeekReview(normalizeFormation(formation || defaultFormation()));
+        return f.weeklyReviews.find((w) => w.weekStart === wk) || f.weeklyReviews[f.weeklyReviews.length - 1];
+      }
+
+      function ProjectPanel({ state, addProject, commit }) {
+        const [pname, setPname] = useState("");
+
+        function setProjectStatus(projectId, status) {
+          const next = {
+            ...state,
+            projects: state.projects.map((p) => (p.id === projectId ? { ...p, status } : p)),
+          };
+          commit(next);
+        }
+
+        function editProjectNotes(projectId, notes) {
+          const next = {
+            ...state,
+            projects: state.projects.map((p) => (p.id === projectId ? { ...p, notes } : p)),
+          };
+          commit(next);
+        }
+
+        function create() {
+          const n = pname.trim();
+          if (!n) return;
+          addProject(n);
+          setPname("");
+        }
+
+        return (
+          <div>
+            <h2>
+              <span>Projects</span>
+              <span className="meta">Keep few active; each needs one next action in Projects lane.</span>
+            </h2>
+
+            <div className="row" style={{ marginBottom: 10 }}>
+              <input
+                className="input"
+                placeholder="New project name…"
+                value={pname}
+                onChange={(e) => setPname(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") create(); }}
+              />
+              <button className="btn primary" onClick={create}>Add</button>
+            </div>
+
+            {state.projects.map((p) => (
+              <div key={p.id} className="task" style={{ marginBottom: 10 }}>
+                <div className="taskTop">
+                  <div style={{ flex: 1 }}>
+                    <p className="taskTitle">{p.name}</p>
+                    <div className="taskMeta">
+                      <span className="chip">status: {p.status}</span>
+                      <span className="chip">id: {p.id.slice(0, 8)}…</span>
+                    </div>
+                  </div>
+                  <div className="taskActions">
+                    <button className="miniBtn" onClick={() => setProjectStatus(p.id, "active")}>Active</button>
+                    <button className="miniBtn" onClick={() => setProjectStatus(p.id, "paused")}>Pause</button>
+                    <button className="miniBtn good" onClick={() => setProjectStatus(p.id, "done")}>Done</button>
+                  </div>
+                </div>
+
+                <div className="divider"></div>
+
+                <div className="small" style={{ marginBottom: 6 }}>
+                  Project notes (private). Keep: goal + constraints + next milestone.
+                </div>
+                <textarea
+                  className="textarea"
+                  style={{ minHeight: 90 }}
+                  value={p.notes}
+                  onChange={(e) => editProjectNotes(p.id, e.target.value)}
+                  placeholder="Goal, milestone, constraints. (No need to track everything.)"
+                />
+              </div>
+            ))}
+          </div>
+        );
+      }
+
+      const root = ReactDOM.createRoot(document.getElementById("root"));
+      root.render(<App />);
+    </script>
+  </body>
+</html>
